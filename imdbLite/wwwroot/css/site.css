@@ -12,6 +12,12 @@ html {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
+/*.btn-primary {
+    background-color: springgreen;
+    color: black;
+    border-color: seagreen;
+}*/
+
 html {
   position: relative;
   min-height: 100%;
@@ -19,4 +25,22 @@ html {
 
 body {
   margin-bottom: 60px;
+}
+
+.search-tag-detail {
+    display: flex;
+    flex-direction: row;
+    padding: 3px;
+    background-color: #d9edf7;
+    border-radius: 3px;
+}
+
+.search-tag {
+    display: flex;
+    margin: 2px 2px 2px 0px;
+}
+
+.tag-results {
+    display: flex;
+    flex-direction: row;
 }

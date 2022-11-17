@@ -1,8 +1,16 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Heardit";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row g-3">
+
+    <div class="input-group center-block">
+        @*h-100 align-items-center justify-content-center">*@
+
+        <input id="searchInput" type="text" class="form-control" name="SearchString" />
+        <input id="submitSearch" type="submit" class="btn btn-primary" value="Search" asp-controller="Search" asp-action="_Search" />
+    </div>
+    @Html.PartialAsync("~/Views/Search/_Search.cshtml")
+
 </div>
+
