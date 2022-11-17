@@ -1,9 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using imdbLite.Data;
+using imdbLite.Models;
+using imdbLite;
+using SpotifyAPI.Web;
+using imdbLite.Controllers;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<imdbLiteContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("imdbLiteContext") ?? throw new InvalidOperationException("Connection string 'imdbLiteContext' not found.")));
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+//builder.Services.AddSingleton(SpotifyClientConfig.CreateDefault());
+//builder.Services.AddScoped<SpotifyClientBuilder>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    SeedData.Initialize(services);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -23,5 +42,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+//var spotify = new SpotifyClient(SpotifyController.GetAccessToken());
 
 app.Run();
