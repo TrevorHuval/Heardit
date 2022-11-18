@@ -16,12 +16,13 @@ namespace imdbLite.Controllers
             return View();
         }
 
-        public static SpotifyClientConfig DefaultConfig = SpotifyClientConfig.CreateDefault();
-
-        public HttpResult Get()
+        public static SpotifyClient GetSpotifyClient()
         {
-            var config = DefaultConfig.WithToken("YourAccessToken");
+            var config = SpotifyClientConfig
+                .CreateDefault()
+                .WithAuthenticator(new ClientCredentialsAuthenticator("a0985cbe9a2c49409b4938fbc16de10b", "b32e00279cc64d2dad1990e5860ce35d")); // takes care of access tokens
             var spotify = new SpotifyClient(config);
+            return spotify;
         }
 
         public static async Task<string> GetAccessToken()

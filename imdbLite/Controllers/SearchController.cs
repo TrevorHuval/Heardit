@@ -3,6 +3,7 @@ using imdbLite.Models;
 using Microsoft.AspNetCore.Mvc;
 using SpotifyAPI.Web;
 using static imdbLite.Controllers.SearchController;
+using static imdbLite.Controllers.SpotifyController;
 
 namespace imdbLite.Controllers
 {
@@ -24,10 +25,7 @@ namespace imdbLite.Controllers
             //var spotify = new SpotifyClient("BQB0ZT6y7mwlw0QKAH8ewAZCkbZrDreYwVQrTVOmxLKrPPtNo6j0LtxLqed_3EHTswatAcz1hZegZJHhhmjer1klm3GA_xy6TRVP2JufeTlFks5j0Biynrq949sQHE6tJJ65Sd_nupPewZWE5L4Dn8rDqcWYoDTbwO7p3djjU4nlXEQ");
             //System.Diagnostics.Debug.WriteLine("Running _Search");
 
-            var config = SpotifyClientConfig
-                .CreateDefault()
-                .WithAuthenticator(new ClientCredentialsAuthenticator("a0985cbe9a2c49409b4938fbc16de10b", "b32e00279cc64d2dad1990e5860ce35d")); // takes care of access tokens
-            var spotify = new SpotifyClient(config);
+            var spotify = GetSpotifyClient();
 
             //var track = await spotify.Tracks.Get("1s6ux0lNiTziSrd7iUAADH");
             var searchRes = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, SearchString));
