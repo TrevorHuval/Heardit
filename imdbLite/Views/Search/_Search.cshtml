@@ -1,1 +1,63 @@
-﻿<p>bingbong</p>
+﻿@model IEnumerable<SpotifyAPI.Web.FullTrack>
+<table class="table">
+    @*<thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Artists)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Album)
+            </th>
+            <th></th>
+        </tr>
+    </thead>*@
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                @*<td id="embed-iframe" data-spotify-id="@Html.DisplayFor(modelItem => item.Uri)"></td>*@
+                <td>
+                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/@Html.DisplayFor(modelItem => item.Id)?utm_source=generator&theme=0" width="100%" height="200" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                </td>
+                @*<td>
+                    <img src="@Html.DisplayFor(modelItem => item.Album.Images[0].Url)" alt="Album Art" style="max-width:150px;width:100%">
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Artists[0].Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Album.Name)
+                </td>*@
+            </tr>
+        }
+    </tbody>
+</table>
+
+@*@section Scripts {
+    <script type='text/javascript'>
+        $(function () {
+            window.onSpotifyIframeApiReady = (IFrameAPI) => {
+                let element = document.getElementById('embed-iframe');
+                let options = {
+                    uri: 'spotify:track:1Y373MqadDRtclJNdnUXVc'
+                };
+                let callback = (EmbedController) => {
+                    document.querySelectorAll('#embed-iframe').forEach(
+                        track => {
+                            track.addEventListener('load', () => {
+                                EmbedController.loadUri(track.dataset.spotifyId)
+                            });
+                        })
+                };
+                IFrameAPI.createController(element, options, callback);
+            };
+        });
+    </script>*@
+
+
+}
+
