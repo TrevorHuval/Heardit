@@ -15,11 +15,11 @@ namespace imdbLite
             _spotifyClientConfig = spotifyClientConfig;
         }
 
-        public SpotifyClient BuildClient()
-        {
-            var token = SpotifyController.GetAccessToken();
+        //public SpotifyClient BuildClient()
+        //{
+        //    var token = SpotifyController.GetAccessToken();
 
-            return new SpotifyClient(_spotifyClientConfig.WithToken(token));
-        }
+        //    return new SpotifyClient(_spotifyClientConfig.WithToken(token));
+        //}
     }
 }

@@ -1,15 +1,19 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 /*.btn-primary {
@@ -18,14 +22,153 @@ html {
     border-color: seagreen;
 }*/
 
+
+/* pillbox search bar*/
+.ms-n5 {
+    margin-left: -2.6rem;
+}
+
+#searchInput {
+    padding-left: 3.125rem;
+    width: 250%;
+}
+
+/* pillbox search bar*/
+
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 3.75rem;
+    background: #181818;
+    font-family: 'Roboto', sans-serif;
 }
+
+body a {
+    color: #aaa;
+}
+
+body a:hover {
+    color: #c8c8c8;
+}
+
+.header {
+    background: #282828;
+    padding: 10px;
+    color: #aaa;
+    border-bottom: 1px solid #181818;
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+}
+
+.header .page-flows .flow {
+    font-size: 20px;
+    color: #aaa;
+    margin: 0 10px;
+}
+
+.header .page-flows .flow:hover {
+    color: #fff;
+}
+
+.header .page-flows .flow .disabled {
+    color: #5e5e5e;
+}
+
+.header .search {
+    margin-left: 1%;
+}
+
+.header .search input {
+    border-radius: 15px;
+    border: none;
+    background: #fff;
+    color: #181818;
+    padding-left: 30px;
+    outline: none;
+    background-image: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/7022/ios-search.svg);
+    background-repeat: no-repeat;
+    background-size: 10%;
+    background-position: 5px;
+}
+
+.header .user {
+    width: 300px;
+    margin-left: auto;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header .user i {
+    font-size: 20px;
+}
+
+.header .user i:hover {
+    color: #fff;
+    cursor: pointer;
+}
+
+.header .user__info img {
+    max-width: 30px;
+    max-height: 30px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.header .user__actions button {
+    background: none;
+    border: none;
+}
+
+.header .user__actions .dropdown-menu {
+    background: #282828;
+    margin-top: 25px;
+    border-radius: 2px;
+    padding: 0;
+    border: none;
+}
+
+.header .user__actions .dropdown-menu:before {
+    font-family: "Ionicons";
+    content: "\f365";
+    position: absolute;
+    top: -30px;
+    right: 7px;
+    color: #282828;
+    font-size: 36px;
+}
+
+.header .user__actions .dropdown-menu a {
+    color: #aaa;
+    transition: all 0.2s ease;
+}
+
+.header .user__actions .dropdown-menu a:hover {
+    background: none;
+    transition: all 0.2s ease;
+}
+
+.header .user__actions .dropdown-menu li {
+    padding: 10px;
+    margin: 0;
+    transition: all 0.2s ease;
+}
+
+.header .user__actions .dropdown-menu li:hover {
+    background: #aaa;
+    transition: all 0.2s ease;
+}
+
+.header .user__actions .dropdown-menu li:hover a {
+    color: #c8c8c8;
+    transition: all 0.2s ease;
+}
+
 
 .search-tag-detail {
     display: flex;
@@ -43,4 +186,13 @@ body {
 .tag-results {
     display: flex;
     flex-direction: row;
+}
+
+tbody,
+td,
+tfoot,
+th,
+thead,
+tr {
+    border-style: none;
 }

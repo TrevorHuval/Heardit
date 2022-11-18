@@ -1,7 +1,11 @@
 ﻿using imdbLite.Models;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using SpotifyAPI.Web;
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using SpotifyAPI.Web.Http;
 
 namespace imdbLite.Controllers
 {
@@ -12,43 +16,47 @@ namespace imdbLite.Controllers
             return View();
         }
 
-        public static string GetAccessToken()
+        public static SpotifyClientConfig DefaultConfig = SpotifyClientConfig.CreateDefault();
+
+        public HttpResult Get()
         {
+            var config = DefaultConfig.WithToken("YourAccessToken");
+            var spotify = new SpotifyClient(config);
+        }
+
+        public static async Task<string> GetAccessToken()
+        {
+
             SpotifyToken token = new SpotifyToken();
-            string url5 = "https://accounts.spotify.com/api/token";
-            var clientid = "a0985cbe9a2c49409b4938fbc16de10b";
-            var clientsecret = "b32e00279cc64d2dad1990e5860ce35d";
+            string postString = string.Format("grant_type=client_credentials");
 
-            //request to get the access token
-            var encode_clientid_clientsecret = Convert.ToBase64String(Encoding.UTF8.GetBytes(string.Format("{0}:{1}", clientid, clientsecret)));
+            byte[] byteArray = Encoding.UTF8.GetBytes(postString);
+            string url = "https://accounts.spotify.com/api/token";
 
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url5);
+            WebRequest request = WebRequest.Create(url);
+            request.Method = "POST";
+            request.Headers.Add("Authorization", "Basic YTA5ODVjYmU5YTJjNDk0MDliNDkzOGZiYzE2ZGUxMGI6YjMyZTAwMjc5Y2M2NGQyZGFkMTk5MGU1ODYwY2UzNWQ="); request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = byteArray.Length;
 
-            webRequest.Method = "POST";
-            webRequest.ContentType = "application/x-www-form-urlencoded";
-            webRequest.Accept = "application/json";
-            webRequest.Headers.Add("Authorization: Basic " + encode_clientid_clientsecret);
-
-            var request = ("grant_type=client_credentials");
-            byte[] req_bytes = Encoding.ASCII.GetBytes(request);
-            webRequest.ContentLength = req_bytes.Length;
-
-            Stream strm = webRequest.GetRequestStream();
-            strm.Write(req_bytes, 0, req_bytes.Length);
-            strm.Close();
-
-            HttpWebResponse resp = (HttpWebResponse)webRequest.GetResponse();
-            String json = "";
-            using (Stream respStr = resp.GetResponseStream())
+            using (Stream dataStream = request.GetRequestStream())
             {
-                using (StreamReader rdr = new StreamReader(respStr, Encoding.UTF8))
+                dataStream.Write(byteArray, 0, byteArray.Length);
+                using (WebResponse response = await request.GetResponseAsync())
                 {
-                    //should get back a string i can then turn to json and parse for accesstoken
-                    json = rdr.ReadToEnd();
-                    rdr.Close();
+                    using (Stream responseStream = response.GetResponseStream())
+                    {
+                        using (StreamReader reader = new StreamReader(responseStream))
+                        {
+                            string responseFromServer = reader.ReadToEnd();
+                            token = JsonConvert.DeserializeObject<SpotifyToken>(responseFromServer)!;
+                        }
+                    }
                 }
             }
+
             return token.access_token;
         }
+
+        
     }
 }

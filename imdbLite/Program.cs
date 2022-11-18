@@ -43,6 +43,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-//var spotify = new SpotifyClient(SpotifyController.GetAccessToken());
+//var spotify = new SpotifyClient(await SpotifyController.GetAccessToken(), tokenType: "Bearer");
 
 app.Run();
