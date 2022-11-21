@@ -1,14 +1,18 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Heardit.Data;
 using Heardit.Models;
 using Heardit;
 using SpotifyAPI.Web;
 using Heardit.Controllers;
+using Microsoft.AspNetCore.Identity;
+using Heardit.Areas.Identity.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<HearditContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("HearditContext") ?? throw new InvalidOperationException("Connection string 'HearditContext' not found.")));
+builder.Services.AddDbContext<HearditDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
+
+builder.Services.AddDefaultIdentity<HearditUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<HearditDbContext>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -36,12 +40,15 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();;
 
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapRazorPages();
 
 //var spotify = new SpotifyClient(await SpotifyController.GetAccessToken(), tokenType: "Bearer");
 

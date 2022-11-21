@@ -5,16 +5,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Heardit.Data;
 using Heardit.Models;
+using Heardit.Areas.Identity.Data;
 
 namespace Heardit.Controllers
 {
     public class SongsController : Controller
     {
-        private readonly HearditContext _context;
+        private readonly HearditDbContext _context;
 
-        public SongsController(HearditContext context)
+        public SongsController(HearditDbContext context)
         {
             _context = context;
         }
@@ -154,7 +154,7 @@ namespace Heardit.Controllers
         {
             if (_context.Song == null)
             {
-                return Problem("Entity set 'HearditContext.Song'  is null.");
+                return Problem("Entity set 'HearditDbContext.Song'  is null.");
             }
             var song = await _context.Song.FindAsync(id);
             if (song != null)
