@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Heardit.Data;
 using System;
 using System.Linq;
+using Heardit.Areas.Identity.Data;
 
 namespace Heardit.Models
 {
@@ -10,9 +10,9 @@ namespace Heardit.Models
     {
         public static void Initialize(IServiceProvider serviceProvider)
         {
-            using (var context = new HearditContext(
+            using (var context = new HearditDbContext(
                 serviceProvider.GetRequiredService<
-                    DbContextOptions<HearditContext>>()))
+                    DbContextOptions<HearditDbContext>>()))
             {
                 context.Database.EnsureCreated();
                 // Look for any songs.
