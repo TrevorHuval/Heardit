@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Heardit.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace Heardit.Areas.Identity.Data;
@@ -9,6 +10,10 @@ namespace Heardit.Areas.Identity.Data;
 // Add profile data for application users by adding properties to the HearditUser class
 public class HearditUser : IdentityUser
 {
-     public string DisplayName { get; set; }
+    public string DisplayName { get; set; }
+    //public ICollection<HearditUser> Followers { get; set; }
+    //public ICollection<HearditUser> Following { get; set; }
+    public ICollection<Follows> Followers { get; set; }
+    public ICollection<Follows> Following { get; set; }
 }
 
