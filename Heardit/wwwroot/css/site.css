@@ -56,6 +56,26 @@ i.fa-play-circle:hover {
 
 }
 
+/* iframe workaround */
+.container {
+    position: relative;
+    float: left;
+}
+
+.overlay {
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 50%;
+    position: absolute;
+}
+
+.overlay:hover {
+    cursor: pointer;
+}
+
+/* iframe workaround */
+
 /* pillbox search bar*/
 .ms-n5 {
     margin-left: -2.6rem;

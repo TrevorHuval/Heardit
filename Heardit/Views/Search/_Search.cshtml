@@ -1,41 +1,58 @@
 ﻿@model IEnumerable<SpotifyAPI.Web.FullTrack>
 <table class="table">
     @*<thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Artists)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Album)
-            </th>
-            <th></th>
-        </tr>
+    <tr>
+    <th>
+    @Html.DisplayNameFor(model => model.Name)
+    </th>
+    <th>
+    @Html.DisplayNameFor(model => model.Artists)
+    </th>
+    <th>
+    @Html.DisplayNameFor(model => model.Album)
+    </th>
+    <th></th>
+    </tr>
     </thead>*@
     <tbody>
         @foreach (var item in Model)
         {
             <tr>
-                @*<td id="embed-iframe" data-spotify-id="@Html.DisplayFor(modelItem => item.Uri)"></td>*@
+                @*<td id="@Html.DisplayFor(modelItem => item.Uri)">
+
+            </td>*@
                 <td>
-                    <iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/@Html.DisplayFor(modelItem => item.Id)?utm_source=generator&theme=0" width="100%" height="200" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                    <div class="container">
+                        <iframe id="@Html.DisplayFor(modelItem => item.Id)" style="border-radius:12px" src="https://open.spotify.com/embed/track/@Html.DisplayFor(modelItem => item.Id)?utm_source=generator&theme=0" width="100%" height="200" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" onclick="alert('clicked')"></iframe>
+                        <div class="overlay"></div>
+                    </div>
                 </td>
                 @*<td>
-                    <img src="@Html.DisplayFor(modelItem => item.Album.Images[0].Url)" alt="Album Art" style="max-width:150px;width:100%">
-                    @Html.DisplayFor(modelItem => item.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Artists[0].Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Album.Name)
-                </td>*@
+            <img src="@Html.DisplayFor(modelItem => item.Album.Images[0].Url)" alt="Album Art" style="max-width:150px;width:100%">
+            @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+            @Html.DisplayFor(modelItem => item.Artists[0].Name)
+            </td>
+            <td>
+            @Html.DisplayFor(modelItem => item.Album.Name)
+            </td>*@
             </tr>
         }
     </tbody>
 </table>
+
+@section scripts {
+
+    <script type="text/javascript">
+        $('.overlay').on('click', function() {
+            let songId = $(this).prev().attr('id');
+            console.log(songId);
+            //$(this).attr('href', songId);
+        });
+    </script>
+
+}
 
 @*@section Scripts {
     <script type='text/javascript'>

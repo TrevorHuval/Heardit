@@ -4,6 +4,7 @@ using Heardit.Areas.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Heardit.Migrations
 {
     [DbContext(typeof(HearditDbContext))]
-    partial class HearditDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221121074241_followers")]
+    partial class followers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,32 +108,6 @@ namespace Heardit.Migrations
                     b.HasIndex("FollowerId");
 
                     b.ToTable("Follows");
-                });
-
-            modelBuilder.Entity("Heardit.Models.Review", b =>
-                {
-                    b.Property<string>("ReviewId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<decimal>("Rating")
-                        .HasColumnType("decimal(4, 2)");
-
-                    b.Property<string>("SongId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("WrittenReview")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ReviewId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Heardit.Models.Song", b =>
@@ -307,15 +284,6 @@ namespace Heardit.Migrations
                         .IsRequired();
 
                     b.Navigation("Follower");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Heardit.Models.Review", b =>
-                {
-                    b.HasOne("Heardit.Areas.Identity.Data.HearditUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId");
 
                     b.Navigation("User");
                 });

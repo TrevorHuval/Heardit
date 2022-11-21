@@ -2,15 +2,53 @@
     ViewData["Title"] = "Heardit";
 }
 
+<div id="did" class="container">
+    <button id="bid" class="btn btn-lg btn-primary" onclick="AlertName('yo')">JS Test</button>
+    <a class="navbar-brand" href="https://www.google.com">link</a>
+
+
+</div>
+
+
 @*<div class="row g-3">*@
 
-    @*<div class="input-group center-block">
+@*<div class="input-group center-block">
         h-100 align-items-center justify-content-center">
 
         <input id="searchInput" type="text" class="form-control" name="SearchString" />
         <input id="submitSearch" type="submit" class="btn btn-primary" value="Search" asp-controller="Search" asp-action="_Search" />
     </div>*@
-    @*@Html.PartialAsync("~/Views/Search/_Search.cshtml")*@
+@*@Html.PartialAsync("~/Views/Search/_Search.cshtml")*@
 
 @*</div>*@
 
+@section scripts {
+
+    @*<script type="text/javascript">
+        function AlertName(name) {
+            alert('You clicked ' + name + "!");
+        }
+    </script>*@
+
+    @*<script type="text/javascript">
+        $(document).ready(function () {
+            $('button').click(function () {
+                alert('You clicked');
+            });
+        });
+
+    </script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+
+            $('div').contents().find('a').attr("href", "youtube.com");
+
+        });
+
+
+
+    </script>*@
+}
