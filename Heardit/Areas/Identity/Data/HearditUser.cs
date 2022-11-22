@@ -10,7 +10,11 @@ namespace Heardit.Areas.Identity.Data;
 // Add profile data for application users by adding properties to the HearditUser class
 public class HearditUser : IdentityUser
 {
-    public string DisplayName { get; set; }
+    public HearditUser() : base()
+    { }
+
+    public HearditUser(string UserName) : base(UserName)
+    { }
     //public ICollection<HearditUser> Followers { get; set; }
     //public ICollection<HearditUser> Following { get; set; }
     public ICollection<Follows> Followers { get; set; }

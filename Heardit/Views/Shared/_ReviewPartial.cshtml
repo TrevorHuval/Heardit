@@ -1,0 +1,33 @@
+﻿@model ReviewModel
+
+@using Heardit.Areas.Identity.Data
+@{
+    var IsUsersPost = Model.Review.User.Id.Equals(User.GetLoggedInUserId<string>());
+}
+
+<div class="card card-tertiary">
+    <div class="card-header">
+        (<a asp-controller="Profile" asp-action="Index" asp-route-username=@Model.Review.User.UserName class="nav-link">@Model.Review.User.UserName</a>)
+
+        <section class="dropright" style="float:right;">
+            <a class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                ...
+            </a>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" asp-controller="Review" asp-action="Index" asp-route-reviewid="@Model.Review.ReviewId">View Review</a>
+            </div>
+        </section>
+
+    </div>
+    <div class="card-body card-text">
+        <p>
+            @Model.Review.WrittenReview
+        </p>
+        <div class="d-flex justify-content-end mt-3">
+            @if (IsUsersPost)
+            {
+                <a class="btn btn-sm mr-2 btn-primary border-dark" asp-action="Delete" asp-controller="Home" asp-route-reviewid=@Model.Review.ReviewId>Delete</a>
+            }
+        </div>
+    </div>
+</div>
