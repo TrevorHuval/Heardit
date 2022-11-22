@@ -57,9 +57,18 @@ i.fa-play-circle:hover {
 }
 
 /* iframe workaround */
-.container {
+#iframeOverlay {
     position: relative;
     float: left;
+}
+
+#reviewsFrame {
+    background-color: #f8f9fa;
+}
+
+#profilePic {
+    max-height: 150px;
+    object-fit: cover;
 }
 
 .overlay {

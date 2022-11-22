@@ -4,6 +4,7 @@ using Heardit.Areas.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Heardit.Migrations
 {
     [DbContext(typeof(HearditDbContext))]
-    partial class HearditDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221122032921_username-update")]
+    partial class usernameupdate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,7 +102,7 @@ namespace Heardit.Migrations
 
                     b.HasIndex("FollowerId");
 
-                    b.ToTable("Follows", (string)null);
+                    b.ToTable("Follows");
                 });
 
             modelBuilder.Entity("Heardit.Models.Review", b =>
@@ -125,7 +128,7 @@ namespace Heardit.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Heardit.Models.Song", b =>
@@ -147,7 +150,7 @@ namespace Heardit.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Song", (string)null);
+                    b.ToTable("Song");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

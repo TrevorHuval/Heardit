@@ -35,7 +35,7 @@ namespace Heardit.Controllers
 
             };
 
-            return View("Follows", data);
+            return View("Follow", data);
         }
     }
 }

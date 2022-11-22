@@ -73,9 +73,10 @@ namespace Heardit.Areas.Identity.Pages.Account
         {
 
             [Required]
-            [StringLength(255, ErrorMessage ="The user name field should have a maximum of 255 characters")]
+            [MinLength(4, ErrorMessage = "Username must be longer than 3 characters")]
+            [DataType(DataType.Text)]
             [Display(Name ="Username")]
-            public string DisplayName { get; set; }
+            public string UserName { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -121,9 +122,8 @@ namespace Heardit.Areas.Identity.Pages.Account
             {
                 var user = CreateUser();
 
-                user.DisplayName = Input.DisplayName;
+                user.UserName = Input.UserName;
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 

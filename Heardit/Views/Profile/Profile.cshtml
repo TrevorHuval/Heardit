@@ -1,0 +1,94 @@
+﻿@model ProfileModel
+@using Heardit.Areas.Identity.Data;
+@{
+    ViewData["Title"] = "Profile";
+}
+
+@{
+    var IsCurrentUser = Model.User.Id.Equals(User.GetLoggedInUserId<string>());
+}
+
+<section class="h-100 gradient-custom-2">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col col-lg-9 col-xl-7">
+                <div class="card">
+                    <div class="rounded-top text-white d-flex flex-row" style="background-color: #000; height:200px;">
+                        <div class="ms-4 d-flex flex-column" style="width: 150px;">
+                            <img id="profilePic" src="https://w0.peakpx.com/wallpaper/946/203/HD-wallpaper-lsu-sailor-mike-death-death-valley-fighting-fighting-tigers-geaux-geaux-tigers-louisiana-louisiana-state-sailor-mike-state-tigers-university-valley.jpg"
+                                 alt="Generic placeholder image" class="img-fluid img-thumbnail mt-4 mb-2"
+                                 style="width: 150px; z-index: 1">
+                        </div>
+
+                        <div class="ms-3" style="margin-top: 130px;">
+                            <h5>@Model.User.UserName</h5>
+                        </div>
+                    </div>
+
+
+
+                    <div class="p-4 text-black" style="background-color: #f8f9fa;">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-6">
+                                    @if (IsCurrentUser)
+                                    {
+                                        <a id="manage" class="btn btn-primary" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage" style="z-index: 1;">Edit Profile</a>
+                                    }
+                                    else
+                                    {
+                                        var followRoute = new Dictionary<string, string>()
+                                    {
+                                    { "userId", Model.User.Id }
+                                    };
+
+                                        if (Model.IsFollowing)
+                                        {
+                                            <a class="btn btn-primary" asp-action="UnFollow" asp-controller="Profile" asp-all-route-data="followRoute">Unfollow</a>
+                                        }
+                                        else
+                                        {
+                                            <a class="btn btn-primary" asp-action="Follow" asp-controller="Profile" asp-all-route-data="followRoute">Follow</a>
+                                        }
+                                    }
+                                </div>
+                                <div class="col-6 d-flex justify-content-end text-center py-1">
+                                    @{
+                                        var followsListRoute = new Dictionary<string, string>()
+                                    {
+                                    { "username", Model.User.UserName }
+                                    };
+                                    }
+                                    <div class="px-3">
+                                        <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowersCount</a>
+                                        <p class="small text-muted mb-0">Followers</p>
+                                    </div>
+                                    <div>
+                                        <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowingCount</a>
+                                        <p class="small text-muted mb-0">Following</p>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="card-body p-4 text-black">
+                        <div class="mb-5">
+                            <p class="lead fw-normal mb-1">Reviews</p>
+                            <div id="reviewsFrame" class="p-4">
+                                @foreach (Review review in Model.Reviews)
+                                {
+                                    var reviewModel = new ReviewModel() { Review = review };
+
+                                    <partial name="_ReviewPartial" model="reviewModel" />
+                                    <br>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,8 @@
+﻿@model ReviewModel
+
+@{
+    ViewData["Title"] = "Review";
+    var reviewModel = new ReviewModel() { Review = Model.Review };
+}
+
+<partial name="_ReviewPartial" model="reviewModel" />

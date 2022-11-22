@@ -49,6 +49,6 @@ internal class ApplicationBuilderUserEntityConfiguration : IEntityTypeConfigurat
 {
     public void Configure(EntityTypeBuilder<HearditUser> builder)
     {
-        builder.Property(u => u.DisplayName).HasMaxLength(255);
+        builder.Property(u => u.UserName).HasMaxLength(255);
     }
 }
