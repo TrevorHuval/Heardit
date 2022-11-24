@@ -16,34 +16,18 @@ namespace Heardit.Models
             {
                 context.Database.EnsureCreated();
                 // Look for any songs.
-                if (context.Song.Any())
+                if (context.Songs.Any())
                 {
                     return;   // DB has been seeded
                 }
-                context.Song.AddRange(
+                context.Songs.AddRange(
                     new Song
                     {
-                        Title = "Shove It",
-                        Artist = "Deftones",
-                        Album = "Around the Fur"
-                    },
-                    new Song
-                    {
-                        Title = "Man in the Box",
-                        Artist = "Alice in Chains",
-                        Album = "Facelift"
-                    },
-                    new Song
-                    {
-                        Title = "Chop Suey!",
-                        Artist = "System of a Down",
-                        Album = "Toxicity"
-                    },
-                    new Song
-                    {
-                        Title = "King For A Day",
-                        Artist = "Pierce the Veil",
-                        Album = "Collide With The Sky"
+                        Id = "3HfEgAaf0koxBpBB8NvGda",
+                        Title = "When You Sleep",
+                        Artist = "my bloody valentine",
+                        Album = "Loveless",
+                        AlbumArt = "https://i.scdn.co/image/ab67616d0000b2730ede770070357575bc050511"
                     }
                 );
                 context.SaveChanges();

@@ -16,9 +16,9 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
     {
     }
 
-    public DbSet<Heardit.Models.Song> Song { get; set; } = default!;
     public DbSet<Follows> Follows { get; set; }
     public DbSet<Review> Reviews { get; set; }
+    public DbSet<Song> Songs { get; set; } = default!;
 
 
     protected override void OnModelCreating(ModelBuilder builder)

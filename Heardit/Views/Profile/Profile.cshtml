@@ -2,9 +2,6 @@
 @using Heardit.Areas.Identity.Data;
 @{
     ViewData["Title"] = "Profile";
-}
-
-@{
     var IsCurrentUser = Model.User.Id.Equals(User.GetLoggedInUserId<string>());
 }
 
@@ -12,7 +9,7 @@
     <div class="container py-5 h-100">
         <div class="row d-flex justify-content-center align-items-center h-100">
             <div class="col col-lg-9 col-xl-7">
-                <div class="card">
+                <div id="profileFrame"class="card">
                     <div class="rounded-top text-white d-flex flex-row" style="background-color: #000; height:200px;">
                         <div class="ms-4 d-flex flex-column" style="width: 150px;">
                             <img id="profilePic" src="https://w0.peakpx.com/wallpaper/946/203/HD-wallpaper-lsu-sailor-mike-death-death-valley-fighting-fighting-tigers-geaux-geaux-tigers-louisiana-louisiana-state-sailor-mike-state-tigers-university-valley.jpg"
@@ -24,10 +21,7 @@
                             <h5>@Model.User.UserName</h5>
                         </div>
                     </div>
-
-
-
-                    <div class="p-4 text-black" style="background-color: #f8f9fa;">
+                    <div id="profileButtonsFrame" class="p-4">
                         <div class="container">
                             <div class="row">
                                 <div class="col-6">
@@ -61,11 +55,11 @@
                                     }
                                     <div class="px-3">
                                         <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowersCount</a>
-                                        <p class="small text-muted mb-0">Followers</p>
+                                        <p class="small text-light mb-0">Followers</p>
                                     </div>
                                     <div>
                                         <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowingCount</a>
-                                        <p class="small text-muted mb-0">Following</p>
+                                        <p class="small text-light mb-0">Following</p>
                                     </div>
 
                                 </div>
@@ -73,14 +67,13 @@
                         </div>
 
                     </div>
-                    <div class="card-body p-4 text-black">
+                    <div class="card-body p-4">
                         <div class="mb-5">
                             <p class="lead fw-normal mb-1">Reviews</p>
                             <div id="reviewsFrame" class="p-4">
                                 @foreach (Review review in Model.Reviews)
                                 {
                                     var reviewModel = new ReviewModel() { Review = review };
-
                                     <partial name="_ReviewPartial" model="reviewModel" />
                                     <br>
                                 }
