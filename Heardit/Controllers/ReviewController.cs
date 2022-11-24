@@ -1,4 +1,5 @@
 ﻿using Heardit.Areas.Identity.Data;
+using Heardit.Migrations;
 using Heardit.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,21 @@ namespace Heardit.Controllers
             {
                 return NotFound();
             }
+        }
+
+        public async Task<IActionResult> Delete(string reviewid)
+        {
+            if (_context.Reviews == null)
+            {
+                return Problem("Entity set 'HearditDbContext.Review'  is null.");
+            }
+            var review = _context.Reviews.AsNoTracking().Where(p => p.ReviewId.Equals(reviewid)).Include(p => p.User).FirstOrDefault();
+            if (review != null)
+            {
+                _context.Reviews.Remove(review);
+            }
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index", "Songs", new { songId = review.SongId });
         }
     }
 }

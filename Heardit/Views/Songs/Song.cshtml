@@ -1,0 +1,86 @@
+﻿@model SongModel
+@using Heardit.Areas.Identity.Data;
+@using Heardit.Models;
+@{
+    ViewData["Title"] = "Song";
+    var UserAlreadyReviewed = false;
+    if (Model.IsEmpty)
+    {
+        decimal avgRating = Math.Round(Model.Reviews.Select(r => r.Rating).ToList().Average(), 2);
+        UserAlreadyReviewed = Model.Reviews.Where(r => r.User.Id.Equals(User.GetLoggedInUserId<string>())).FirstOrDefault().Equals(User.GetLoggedInUserId<string>());
+    }
+}
+
+<section class="h-100 gradient-custom-2">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col col-lg-9 col-xl-7">
+                <div id="profileFrame" class="card">
+                    <div class="rounded-top text-white d-flex flex-row" style="background-color: #000; height:200px;">
+                        <div class="ms-4 d-flex flex-column" style="width: 150px;">
+                            <img id="albumArt" src="@Model.Song.AlbumArt"
+                                 alt="Album Art" class="img-fluid img-thumbnail mt-4 mb-2"
+                                 style="width: 150px; z-index: 1">
+                        </div>
+
+                        <div class="ms-3" style="margin-top: 130px;">
+                            <h5>@Model.Song.Title</h5>
+                        </div>
+                    </div>
+                    <div id="songContentFrame" class="p-4">
+                        @if (!UserAlreadyReviewed)
+                        {
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col">
+                                        <form asp-action="SubmitReview" asp-controller="Songs" asp-route-songId="@Model.Song.Id" asp-route-songName="@Model.Song.Title">
+                                            <div class="row">
+                                                <label for="rating" class="small text-light mb-0" id="ratingValue"></label>
+                                                <input type="range" class="form-range" id="rating" name="rating" min="1" max="10" step="0.1" value="1" />
+                                            </div>
+                                            <div class="card-text">
+                                                <div class="row">
+                                                    <label for="writtenReview" class="form-label"></label>
+                                                    <textarea type="text" class="form-control" id="writtenReview" name="writtenReview" rows="3" style="resize: none;"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-end mt-3">
+                                                <button class="btn btn-sm mr-2 btn-primary border-dark" type="submit">Post</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                            </div>
+                        }
+
+                        <div class="card-body p-4">
+                            <div class="mb-5">
+                                <p class="lead fw-normal mb-1">Reviews</p>
+                                <div id="reviewCard" class="p-4">
+                                    @foreach (Review review in Model.Reviews)
+                                    {
+                                        var reviewModel = new ReviewModel() { Review = review };
+                                        <partial name="_ReviewPartial" model="reviewModel" />
+                                        <br>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section scripts {
+    <script type="text/javascript">
+        $(window).on('load', (function () {
+            $('#ratingValue').text($('#rating').val())
+        }));
+        $('#rating').on('input', (function () {
+            $('#ratingValue').text($('#rating').val())
+        }));
+    </script>
+}

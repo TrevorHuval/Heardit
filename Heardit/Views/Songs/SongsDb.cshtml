@@ -1,12 +1,12 @@
 ﻿@model IEnumerable<Heardit.Models.Song>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "SongsDb";
 }
 
-<h1>Index</h1>
+<h1>SongsDb</h1>
 
-<form asp-controller="Songs" asp-action="Index">
+<form asp-controller="Songs" asp-action="SongsDb">
     <p>
         Title: <input type="text" name="SearchString" />
         <input type="submit" value="Filter" />

@@ -7,28 +7,101 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Heardit.Models;
 using Heardit.Areas.Identity.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Hosting;
+using SpotifyAPI.Web;
+using static Heardit.Controllers.SpotifyController;
+using System.Diagnostics;
+using Heardit.Migrations;
 
 namespace Heardit.Controllers
 {
     public class SongsController : Controller
     {
         private readonly HearditDbContext _context;
+        private readonly UserManager<HearditUser> _userManager;
 
-        public SongsController(HearditDbContext context)
+        public SongsController(UserManager<HearditUser> userManager, HearditDbContext context)
         {
+            _userManager = userManager;
             _context = context;
         }
 
-        // GET: Songs
-        public async Task<IActionResult> Index(string searchString)
+        public async Task<IActionResult> Index(string songId)
         {
-            if (_context.Song == null)
+            if (string.IsNullOrWhiteSpace(songId)) { return NotFound(); }
+            try
+            {
+                var song = _context.Songs.AsNoTracking().Where(s => s.Id.Equals(songId)).FirstOrDefault();
+
+                if (song == null)
+                {
+                    song = await GenerateSong(songId);
+                }
+
+                var songModel = new SongModel
+                {
+                    Song = song,
+                    Reviews = _context.Reviews.AsNoTracking().Where(r => r.SongId.Equals(songId)).Include(r => r.User).ToList()
+                };
+
+                return View("Song", songModel);
+            }
+            catch
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitReview(string writtenReview, decimal rating, string songId, string songName)
+        {
+            HearditUser user = await _userManager.FindByIdAsync(User.GetLoggedInUserId<string>());
+
+            var review = new Review(writtenReview, user, rating, songId, songName);
+            _context.Reviews.Add(review);
+            await _context.SaveChangesAsync();
+            ModelState.Clear();
+
+            var song = _context.Songs.AsNoTracking().Where(s => s.Id.Equals(songId)).FirstOrDefault();
+
+            var songModel = new SongModel
+            {
+                Song = song,
+                Reviews = _context.Reviews.AsNoTracking().Where(r => r.SongId.Equals(songId)).Include(r => r.User).ToList()
+            };
+
+            return View("Song", songModel);
+        }
+
+
+        public async Task<Song> GenerateSong(string songId)
+        {
+
+            var spotify = GetSpotifyClient();
+
+            var songResponse = await spotify.Tracks.Get(songId);
+
+            _context.Songs.Add(new Song(songId, songResponse.Name, songResponse.Artists[0].Name, songResponse.Album.Name, songResponse.Album.Images[0].Url));
+            await _context.SaveChangesAsync();
+            ModelState.Clear();
+
+            var song = _context.Songs.AsNoTracking().Where(s => s.Id.Equals(songId)).FirstOrDefault();
+
+            return song;
+        }
+
+        // GET: Songs
+        public async Task<IActionResult> SongsDb(string searchString)
+        {
+            if (_context.Songs == null)
             {
                 return Problem("Entity set 'Heardit.Song'  is null.");
             }
 
-            var songs = from m in _context.Song
-                         select m;
+            var songs = from m in _context.Songs
+                        select m;
 
             if (!String.IsNullOrEmpty(searchString))
             {
@@ -39,14 +112,14 @@ namespace Heardit.Controllers
         }
 
         // GET: Songs/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(string? id)
         {
-            if (id == null || _context.Song == null)
+            if (id == null || _context.Songs == null)
             {
                 return NotFound();
             }
 
-            var song = await _context.Song
+            var song = await _context.Songs
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (song == null)
             {
@@ -79,14 +152,14 @@ namespace Heardit.Controllers
         }
 
         // GET: Songs/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(string? id)
         {
-            if (id == null || _context.Song == null)
+            if (id == null || _context.Songs == null)
             {
                 return NotFound();
             }
 
-            var song = await _context.Song.FindAsync(id);
+            var song = await _context.Songs.FindAsync(id);
             if (song == null)
             {
                 return NotFound();
@@ -99,7 +172,7 @@ namespace Heardit.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Artist,Album")] Song song)
+        public async Task<IActionResult> Edit(string id, [Bind("Id,Title,Artist,Album")] Song song)
         {
             if (id != song.Id)
             {
@@ -130,14 +203,14 @@ namespace Heardit.Controllers
         }
 
         // GET: Songs/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(string? id)
         {
-            if (id == null || _context.Song == null)
+            if (id == null || _context.Songs == null)
             {
                 return NotFound();
             }
 
-            var song = await _context.Song
+            var song = await _context.Songs
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (song == null)
             {
@@ -150,25 +223,25 @@ namespace Heardit.Controllers
         // POST: Songs/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            if (_context.Song == null)
+            if (_context.Songs == null)
             {
                 return Problem("Entity set 'HearditDbContext.Song'  is null.");
             }
-            var song = await _context.Song.FindAsync(id);
+            var song = await _context.Songs.FindAsync(id);
             if (song != null)
             {
-                _context.Song.Remove(song);
+                _context.Songs.Remove(song);
             }
-            
+
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool SongExists(int id)
+        private bool SongExists(string id)
         {
-          return (_context.Song?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Songs?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
