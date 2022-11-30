@@ -13,9 +13,11 @@ using SpotifyAPI.Web;
 using static Heardit.Controllers.SpotifyController;
 using System.Diagnostics;
 using Heardit.Migrations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Heardit.Controllers
 {
+    [Authorize]
     public class SongsController : Controller
     {
         private readonly HearditDbContext _context;

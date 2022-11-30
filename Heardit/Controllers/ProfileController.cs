@@ -1,5 +1,6 @@
 ﻿using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using static System.Reflection.Metadata.BlobBuilder;
 
 namespace Heardit.Controllers
 {
+    [Authorize]
     public class ProfileController : Controller
     {
         private readonly UserManager<HearditUser> _userManager;

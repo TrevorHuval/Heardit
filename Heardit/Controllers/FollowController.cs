@@ -1,11 +1,13 @@
 ﻿using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heardit.Controllers
 {
+    
     public class FollowController : Controller
     {
         private readonly UserManager<HearditUser> _userManager;
@@ -16,7 +18,6 @@ namespace Heardit.Controllers
             _userManager = userManager;
             _context = context;
         }
-
 
         public IActionResult Index(string username)
         {
