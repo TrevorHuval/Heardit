@@ -4,10 +4,12 @@
 @{
     ViewData["Title"] = "Song";
     var UserAlreadyReviewed = false;
-    if (Model.IsEmpty)
+    decimal avgRating = decimal.Zero;
+    if (Model.Reviews.Count > 0)
     {
-        decimal avgRating = Math.Round(Model.Reviews.Select(r => r.Rating).ToList().Average(), 2);
-        UserAlreadyReviewed = Model.Reviews.Where(r => r.User.Id.Equals(User.GetLoggedInUserId<string>())).FirstOrDefault().Equals(User.GetLoggedInUserId<string>());
+        var ratingList = Model.Reviews.Select(r => r.Rating).ToList();
+        avgRating = Math.Round(ratingList.Average(), 2);
+        UserAlreadyReviewed = Model.Reviews.Where(r => r.User.Id.Equals(User.GetLoggedInUserId<string>())).FirstOrDefault() != null;
     }
 }
 
@@ -27,6 +29,23 @@
                             <h5>@Model.Song.Title</h5>
                         </div>
                     </div>
+                    @if (Model.Reviews.Count > 0)
+                    {
+                        <div id="profileButtonsFrame" class="p-4">
+                            <div class="container">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="px-3">
+                                            <p class="mb-1 h5">Average Song Rating: @avgRating</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                        </div>
+                    }
+
                     <div id="songContentFrame" class="p-4">
                         @if (!UserAlreadyReviewed)
                         {

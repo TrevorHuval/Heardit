@@ -10,14 +10,14 @@
     <div class="card-header">
         <p>Review of </p>
         <div id="reviewHeader">
-            <a asp-controller="Songs" asp-action="Index" asp-route-songId=@Model.Review.SongId class="nav-link">@Model.Review.SongName</a>
+            <a asp-controller="Songs" asp-action="Index" asp-route-songId=@Model.Review.SongId class="nav-link fs-5">@Model.Review.SongName</a>
             <a asp-controller="Profile" asp-action="Index" asp-route-username=@Model.Review.User.UserName class="nav-link"> by @Model.Review.User.UserName</a>
 
         </div>
 
     </div>
     <div class="card-body card-text">
-        <p>
+        <p class="fs-4 fw-bold">
             @Model.Review.Rating
         </p>
         <p>

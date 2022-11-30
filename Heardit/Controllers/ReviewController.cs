@@ -1,6 +1,7 @@
 ﻿using Heardit.Areas.Identity.Data;
 using Heardit.Migrations;
 using Heardit.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using System.Diagnostics;
 
 namespace Heardit.Controllers
 {
+    [Authorize]
     public class ReviewController : Controller
     {
         private readonly UserManager<HearditUser> _userManager;
