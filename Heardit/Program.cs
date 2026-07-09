@@ -1,30 +1,42 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Heardit.Models;
-using Heardit;
-using SpotifyAPI.Web;
-using Heardit.Controllers;
-using Microsoft.AspNetCore.Identity;
+using Heardit.Options;
 using Heardit.Areas.Identity.Data;
+using Microsoft.Extensions.Options;
+using SpotifyAPI.Web;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddDbContext<HearditDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
 
 builder.Services.AddDefaultIdentity<HearditUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<HearditDbContext>();
 
+// Spotify configuration bound from user-secrets / environment (never committed).
+builder.Services.AddOptions<SpotifyOptions>()
+    .BindConfiguration(SpotifyOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+// A single long-lived Spotify client; ClientCredentialsAuthenticator handles token acquisition/refresh internally.
+builder.Services.AddSingleton<ISpotifyClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<SpotifyOptions>>().Value;
+    var config = SpotifyClientConfig
+        .CreateDefault()
+        .WithAuthenticator(new ClientCredentialsAuthenticator(options.ClientId, options.ClientSecret));
+    return new SpotifyClient(config);
+});
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-//builder.Services.AddSingleton(SpotifyClientConfig.CreateDefault());
-//builder.Services.AddScoped<SpotifyClientBuilder>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-
     SeedData.Initialize(services);
 }
 
@@ -40,8 +52,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-app.UseAuthentication();;
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -49,7 +60,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapRazorPages();
-
-//var spotify = new SpotifyClient(await SpotifyController.GetAccessToken(), tokenType: "Bearer");
 
 app.Run();

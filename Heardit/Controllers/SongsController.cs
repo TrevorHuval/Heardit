@@ -10,7 +10,6 @@ using Heardit.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
 using SpotifyAPI.Web;
-using static Heardit.Controllers.SpotifyController;
 using System.Diagnostics;
 using Heardit.Migrations;
 using Microsoft.AspNetCore.Authorization;
@@ -22,11 +21,13 @@ namespace Heardit.Controllers
     {
         private readonly HearditDbContext _context;
         private readonly UserManager<HearditUser> _userManager;
+        private readonly ISpotifyClient _spotify;
 
-        public SongsController(UserManager<HearditUser> userManager, HearditDbContext context)
+        public SongsController(UserManager<HearditUser> userManager, HearditDbContext context, ISpotifyClient spotify)
         {
             _userManager = userManager;
             _context = context;
+            _spotify = spotify;
         }
 
         public async Task<IActionResult> Index(string songId)
@@ -81,9 +82,7 @@ namespace Heardit.Controllers
         public async Task<Song> GenerateSong(string songId)
         {
 
-            var spotify = GetSpotifyClient();
-
-            var songResponse = await spotify.Tracks.Get(songId);
+            var songResponse = await _spotify.Tracks.Get(songId);
 
             _context.Songs.Add(new Song(songId, songResponse.Name, songResponse.Artists[0].Name, songResponse.Album.Name, songResponse.Album.Images[0].Url));
             await _context.SaveChangesAsync();

@@ -2,34 +2,29 @@
 using Heardit.Models;
 using Microsoft.AspNetCore.Mvc;
 using SpotifyAPI.Web;
-using static Heardit.Controllers.SearchController;
-using static Heardit.Controllers.SpotifyController;
 
 namespace Heardit.Controllers
 {
     public class SearchController : Controller
     {
         private readonly HearditDbContext _context;
+        private readonly ISpotifyClient _spotify;
 
-        public SearchController(HearditDbContext context)
+        public SearchController(HearditDbContext context, ISpotifyClient spotify)
         {
             _context = context;
+            _spotify = spotify;
         }
 
         public async Task<IActionResult> _Search(string SearchString)
         {
             if (string.IsNullOrWhiteSpace(SearchString)) { return View("~/Views/Home/Index.cshtml"); }
 
-            var spotify = GetSpotifyClient();
+            var searchRes = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, SearchString));
 
-            var searchRes = await spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, SearchString));
-
-            var searchSongs = searchRes.Tracks.Items;
+            var searchSongs = searchRes.Tracks?.Items ?? new List<SpotifyAPI.Web.FullTrack>();
 
             return View(searchSongs);
         }
-
-
-
     }
 }

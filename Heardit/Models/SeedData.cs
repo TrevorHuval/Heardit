@@ -14,7 +14,7 @@ namespace Heardit.Models
                 serviceProvider.GetRequiredService<
                     DbContextOptions<HearditDbContext>>()))
             {
-                context.Database.EnsureCreated();
+                context.Database.Migrate();
                 // Look for any songs.
                 if (context.Songs.Any())
                 {
