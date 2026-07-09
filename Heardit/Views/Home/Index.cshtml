@@ -2,11 +2,11 @@
     ViewData["Title"] = "Heardit";
 }
 
-@model IEnumerable<SpotifyAPI.Web.FullTrack>
+@model IEnumerable<SpotifyAPI.Web.SimpleTrack>
 <table class="table">
     <tbody>
         <tr>
-            <th class="fs-2 fw-bold">Today's Top 50</th>
+            <th class="fs-2 fw-bold">New Releases</th>
 
         </tr>
         @foreach (var item in Model)

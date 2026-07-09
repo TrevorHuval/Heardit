@@ -21,22 +21,34 @@ namespace Heardit.Controllers
 
         public async Task<IActionResult> IndexAsync()
         {
-            var playlistItems = await _spotify.Playlists.GetPlaylistItems("37i9dQZEVXbMDoHDwVN2tF");
+            // Spotify closed Web API access to its editorial "Top 50" playlists in Nov 2024,
+            // so the homepage surfaces new releases instead. New releases come back as albums;
+            // we resolve each album's lead track so the existing song-review flow still works.
+            var newReleases = await _spotify.Browse.GetNewReleases();
 
-            List<SpotifyAPI.Web.FullTrack> topFiftySongs = new List<SpotifyAPI.Web.FullTrack>();
+            var albumIds = newReleases.Albums?.Items?
+                .Where(a => !string.IsNullOrEmpty(a.Id))
+                .Select(a => a.Id)
+                .Take(20)
+                .ToList() ?? new List<string>();
 
-            if (playlistItems.Items != null)
+            var leadTracks = new List<SimpleTrack>();
+
+            if (albumIds.Count > 0)
             {
-                foreach (PlaylistTrack<IPlayableItem> item in playlistItems.Items)
+                var albums = await _spotify.Albums.GetSeveral(new AlbumsRequest(albumIds));
+
+                foreach (var album in albums.Albums)
                 {
-                    if (item.Track is SpotifyAPI.Web.FullTrack track)
+                    var firstTrack = album.Tracks?.Items?.FirstOrDefault();
+                    if (firstTrack != null)
                     {
-                        topFiftySongs.Add(track);
+                        leadTracks.Add(firstTrack);
                     }
                 }
             }
 
-            return View(topFiftySongs);
+            return View(leadTracks);
         }
 
         public IActionResult Privacy()
