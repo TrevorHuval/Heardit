@@ -1,54 +1,25 @@
-﻿using Heardit.Models;
+using System.Diagnostics;
+using Heardit.Models;
+using Heardit.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SpotifyAPI.Web;
-using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Heardit.Controllers
 {
     [Authorize]
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-        private readonly ISpotifyClient _spotify;
+        private readonly ISpotifyService _spotify;
 
-        public HomeController(ILogger<HomeController> logger, ISpotifyClient spotify)
+        public HomeController(ISpotifyService spotify)
         {
-            _logger = logger;
             _spotify = spotify;
         }
 
-        public async Task<IActionResult> IndexAsync()
+        public async Task<IActionResult> Index()
         {
-            // Spotify closed Web API access to its editorial "Top 50" playlists in Nov 2024,
-            // so the homepage surfaces new releases instead. New releases come back as albums;
-            // we resolve each album's lead track so the existing song-review flow still works.
-            var newReleases = await _spotify.Browse.GetNewReleases();
-
-            var albumIds = newReleases.Albums?.Items?
-                .Where(a => !string.IsNullOrEmpty(a.Id))
-                .Select(a => a.Id)
-                .Take(20)
-                .ToList() ?? new List<string>();
-
-            var leadTracks = new List<SimpleTrack>();
-
-            if (albumIds.Count > 0)
-            {
-                var albums = await _spotify.Albums.GetSeveral(new AlbumsRequest(albumIds));
-
-                foreach (var album in albums.Albums)
-                {
-                    var firstTrack = album.Tracks?.Items?.FirstOrDefault();
-                    if (firstTrack != null)
-                    {
-                        leadTracks.Add(firstTrack);
-                    }
-                }
-            }
-
-            return View(leadTracks);
+            var newReleases = await _spotify.GetNewReleaseTracksAsync();
+            return View(newReleases);
         }
 
         public IActionResult Privacy()

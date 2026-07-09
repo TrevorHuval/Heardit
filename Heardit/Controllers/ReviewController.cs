@@ -1,62 +1,42 @@
-﻿using Heardit.Areas.Identity.Data;
-using Heardit.Migrations;
+using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Heardit.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Diagnostics;
 
 namespace Heardit.Controllers
 {
     [Authorize]
     public class ReviewController : Controller
     {
-        private readonly UserManager<HearditUser> _userManager;
-        private readonly HearditDbContext _context;
+        private readonly IReviewService _reviewService;
 
-        public ReviewController(UserManager<HearditUser> userManager, HearditDbContext context)
+        public ReviewController(IReviewService reviewService)
         {
-            _userManager = userManager;
-            _context = context;
+            _reviewService = reviewService;
         }
 
-        public IActionResult Index(string reviewId)
+        public async Task<IActionResult> Index(string reviewId)
         {
-            try
-            {
-                var reviewFind = _context.Reviews.AsNoTracking().Where(p => p.ReviewId.Equals(reviewId)).Include(p => p.User).FirstOrDefault();
-
-                if (reviewFind == null)
-                {
-                    throw new NullReferenceException();
-                }
-
-                return View("Review", new ReviewModel() { Review = reviewFind });
-            }
-            catch (NullReferenceException)
+            var review = await _reviewService.GetReviewAsync(reviewId);
+            if (review == null)
             {
                 return NotFound();
             }
-            catch
-            {
-                return NotFound();
-            }
+
+            return View("Review", new ReviewModel { Review = review });
         }
 
         public async Task<IActionResult> Delete(string reviewid)
         {
-            if (_context.Reviews == null)
+            var result = await _reviewService.DeleteReviewAsync(reviewid, User.GetLoggedInUserId<string>());
+
+            return result.Status switch
             {
-                return Problem("Entity set 'HearditDbContext.Review'  is null.");
-            }
-            var review = _context.Reviews.AsNoTracking().Where(p => p.ReviewId.Equals(reviewid)).Include(p => p.User).FirstOrDefault();
-            if (review != null)
-            {
-                _context.Reviews.Remove(review);
-            }
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index", "Songs", new { songId = review.SongId });
+                ReviewDeleteStatus.NotFound => NotFound(),
+                ReviewDeleteStatus.Forbidden => Forbid(),
+                _ => RedirectToAction("Index", "Songs", new { songId = result.SongId })
+            };
         }
     }
 }

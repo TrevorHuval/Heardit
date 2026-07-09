@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Heardit.Models;
 using Heardit.Options;
+using Heardit.Services;
 using Heardit.Areas.Identity.Data;
 using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
@@ -28,6 +29,12 @@ builder.Services.AddSingleton<ISpotifyClient>(sp =>
         .WithAuthenticator(new ClientCredentialsAuthenticator(options.ClientId, options.ClientSecret));
     return new SpotifyClient(config);
 });
+
+// Application services.
+builder.Services.AddScoped<ISpotifyService, SpotifyService>();
+builder.Services.AddScoped<ISongService, SongService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
