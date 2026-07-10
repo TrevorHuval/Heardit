@@ -1,11 +1,9 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heardit.Controllers
 {
-    [Authorize]
     public class ProfileController : Controller
     {
         private readonly IProfileService _profileService;
@@ -26,6 +24,7 @@ namespace Heardit.Controllers
             return View("Profile", model);
         }
 
+        [HttpPost]
         public async Task<IActionResult> Follow(string userId)
         {
             var username = await _profileService.FollowAsync(userId, User.GetLoggedInUserId<string>());
@@ -37,6 +36,7 @@ namespace Heardit.Controllers
             return RedirectToAction(nameof(Index), new { username });
         }
 
+        [HttpPost]
         public async Task<IActionResult> UnFollow(string userId)
         {
             var username = await _profileService.UnfollowAsync(userId, User.GetLoggedInUserId<string>());

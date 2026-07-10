@@ -22,6 +22,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Heardit.Areas.Identity.Pages.Account
 {
+    [AllowAnonymous]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<HearditUser> _signInManager;

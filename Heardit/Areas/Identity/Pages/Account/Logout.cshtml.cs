@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Heardit.Areas.Identity.Pages.Account
 {
+    [AllowAnonymous]
     public class LogoutModel : PageModel
     {
         private readonly SignInManager<HearditUser> _signInManager;

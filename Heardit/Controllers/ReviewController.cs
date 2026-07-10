@@ -1,12 +1,10 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Models;
 using Heardit.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heardit.Controllers
 {
-    [Authorize]
     public class ReviewController : Controller
     {
         private readonly IReviewService _reviewService;
@@ -27,6 +25,7 @@ namespace Heardit.Controllers
             return View("Review", new ReviewModel { Review = review });
         }
 
+        [HttpPost]
         public async Task<IActionResult> Delete(string reviewid)
         {
             var result = await _reviewService.DeleteReviewAsync(reviewid, User.GetLoggedInUserId<string>());

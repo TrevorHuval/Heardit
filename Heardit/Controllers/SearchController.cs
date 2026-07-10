@@ -1,5 +1,6 @@
 using Heardit.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using SpotifyAPI.Web;
 
 namespace Heardit.Controllers
@@ -13,6 +14,7 @@ namespace Heardit.Controllers
             _spotify = spotify;
         }
 
+        [EnableRateLimiting("spotify")]
         public async Task<IActionResult> _Search(string SearchString)
         {
             if (string.IsNullOrWhiteSpace(SearchString))

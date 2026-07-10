@@ -1,11 +1,11 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Services;
-using Microsoft.AspNetCore.Authorization;
+using Heardit.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Heardit.Controllers
 {
-    [Authorize]
     public class SongsController : Controller
     {
         private readonly ISongService _songService;
@@ -17,6 +17,7 @@ namespace Heardit.Controllers
             _reviewService = reviewService;
         }
 
+        [EnableRateLimiting("spotify")]
         public async Task<IActionResult> Index(string songId)
         {
             var model = await _songService.GetSongPageAsync(songId);
@@ -29,11 +30,28 @@ namespace Heardit.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitReview(string writtenReview, decimal rating, string songId, string songName)
+        public async Task<IActionResult> SubmitReview(ReviewInputModel input)
         {
-            await _reviewService.AddReviewAsync(writtenReview, rating, songId, songName, User.GetLoggedInUserId<string>());
-            return RedirectToAction(nameof(Index), new { songId });
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction(nameof(Index), new { songId = input.SongId });
+            }
+
+            // Resolve the song (and its trusted title) server-side rather than trusting a posted name.
+            var song = await _songService.GetOrCreateSongAsync(input.SongId);
+            if (song == null)
+            {
+                return NotFound();
+            }
+
+            await _reviewService.AddReviewAsync(
+                input.WrittenReview ?? string.Empty,
+                input.Rating,
+                input.SongId,
+                song.Title ?? string.Empty,
+                User.GetLoggedInUserId<string>());
+
+            return RedirectToAction(nameof(Index), new { songId = input.SongId });
         }
     }
 }

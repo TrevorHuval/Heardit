@@ -38,11 +38,15 @@
 
                                         if (Model.IsFollowing)
                                         {
-                                            <a class="btn btn-primary" asp-action="UnFollow" asp-controller="Profile" asp-all-route-data="followRoute">Unfollow</a>
+                                            <form asp-action="UnFollow" asp-controller="Profile" asp-all-route-data="followRoute" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-primary">Unfollow</button>
+                                            </form>
                                         }
                                         else
                                         {
-                                            <a class="btn btn-primary" asp-action="Follow" asp-controller="Profile" asp-all-route-data="followRoute">Follow</a>
+                                            <form asp-action="Follow" asp-controller="Profile" asp-all-route-data="followRoute" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-primary">Follow</button>
+                                            </form>
                                         }
                                     }
                                 </div>

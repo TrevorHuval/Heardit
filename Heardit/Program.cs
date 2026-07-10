@@ -1,3 +1,6 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Heardit.Models;
 using Heardit.Options;
@@ -36,8 +39,36 @@ builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// Require an authenticated user by default; opt out with [AllowAnonymous].
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+// Throttle the endpoints that call the Spotify API, partitioned per user (or client IP).
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("spotify", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromSeconds(10),
+                PermitLimit = 10,
+                QueueLimit = 0
+            }));
+});
+
+// Add services to the container. Every unsafe (POST/PUT/DELETE) request is antiforgery-validated.
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
 var app = builder.Build();
 
@@ -55,12 +86,33 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Baseline security headers. CSP permits the Spotify embeds and the Font Awesome kit the views use;
+// it will tighten once the remote kit is replaced with a locally hosted copy.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["X-Frame-Options"] = "SAMEORIGIN";
+    headers["Content-Security-Policy"] =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' https://kit.fontawesome.com https://open.spotify.com https://*.spotifycdn.com; " +
+        "style-src 'self' 'unsafe-inline' https://ka-f.fontawesome.com; " +
+        "font-src 'self' data: https://ka-f.fontawesome.com; " +
+        "img-src 'self' data: https:; " +
+        "connect-src 'self' https://kit.fontawesome.com https://ka-f.fontawesome.com https://*.spotify.com https://*.spotifycdn.com; " +
+        "frame-src https://open.spotify.com https://*.spotify.com https://*.spotifycdn.com; " +
+        "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+    await next();
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllerRoute(
     name: "default",
