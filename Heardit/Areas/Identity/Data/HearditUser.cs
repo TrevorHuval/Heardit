@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Heardit.Models;
 using Microsoft.AspNetCore.Identity;
 
@@ -15,9 +12,8 @@ public class HearditUser : IdentityUser
 
     public HearditUser(string UserName) : base(UserName)
     { }
-    //public ICollection<HearditUser> Followers { get; set; }
-    //public ICollection<HearditUser> Following { get; set; }
-    public ICollection<Follows> Followers { get; set; }
-    public ICollection<Follows> Following { get; set; }
+
+    public ICollection<Follows> Followers { get; set; } = new List<Follows>();
+    public ICollection<Follows> Following { get; set; } = new List<Follows>();
 }
 

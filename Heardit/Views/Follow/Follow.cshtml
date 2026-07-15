@@ -1,4 +1,4 @@
-﻿@model FollowModel
+﻿@model FollowViewModel
 @using Heardit.Areas.Identity.Data;
 @{
     ViewData["Title"] = "Follow";
@@ -53,7 +53,7 @@
                                     @{
                                         var followsListRoute = new Dictionary<string, string>()
                                     {
-                                    { "username", Model.User.UserName }
+                                    { "username", Model.User.UserName ?? string.Empty }
                                     };
                                     }
                                     <div class="px-3">

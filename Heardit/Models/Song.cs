@@ -1,12 +1,11 @@
-﻿using SpotifyAPI.Web;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Heardit.Models
 {
     public class Song
     {
         [Key]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
         public string? Title { get; set; }
         public string? Artist { get; set; }
         public string? Album { get; set; }

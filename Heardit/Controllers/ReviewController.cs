@@ -1,6 +1,6 @@
 using Heardit.Areas.Identity.Data;
-using Heardit.Models;
 using Heardit.Services;
+using Heardit.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Heardit.Controllers
@@ -22,7 +22,7 @@ namespace Heardit.Controllers
                 return NotFound();
             }
 
-            return View("Review", new ReviewModel { Review = review });
+            return View("Review", new ReviewViewModel { Review = review });
         }
 
         [HttpPost]

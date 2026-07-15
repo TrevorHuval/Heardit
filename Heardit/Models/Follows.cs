@@ -6,11 +6,11 @@ namespace Heardit.Models
     public class Follows
     {
 
-        public string UserId { get; set; }
-        public virtual HearditUser User { get; set; }
+        public string UserId { get; set; } = null!;
+        public virtual HearditUser User { get; set; } = null!;
 
 
-        public string FollowerId { get; set; }
-        public virtual HearditUser Follower { get; set; }
+        public string FollowerId { get; set; } = null!;
+        public virtual HearditUser Follower { get; set; } = null!;
     }
 }

@@ -1,8 +1,8 @@
-﻿@model ReviewModel
+﻿@model ReviewViewModel
 
 @{
     ViewData["Title"] = "Review";
-    var reviewModel = new ReviewModel() { Review = Model.Review };
+    var reviewModel = new ReviewViewModel() { Review = Model.Review };
 }
 
 <partial name="_ReviewPartial" model="reviewModel" />

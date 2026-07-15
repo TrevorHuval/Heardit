@@ -7,15 +7,15 @@ namespace Heardit.Models
     public class Review
     {
         [System.ComponentModel.DataAnnotations.Key]
-        public string ReviewId { get; set; }
+        public string ReviewId { get; set; } = null!;
 
-        public string SongId { get; set; }
+        public string SongId { get; set; } = null!;
 
-        public string SongName { get; set; }
+        public string SongName { get; set; } = null!;
 
-        public string WrittenReview { get; set; }
+        public string WrittenReview { get; set; } = null!;
 
-        public HearditUser User { get; set; }
+        public HearditUser User { get; set; } = null!;
 
         [Column(TypeName = "decimal(3, 1)")]
         public decimal Rating { get; set; }

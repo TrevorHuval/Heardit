@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using Heardit.Models;
 using Heardit.Services;
+using Heardit.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

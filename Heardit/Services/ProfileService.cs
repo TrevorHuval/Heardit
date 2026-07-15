@@ -1,5 +1,6 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Heardit.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +8,9 @@ namespace Heardit.Services
 {
     public interface IProfileService
     {
-        Task<ProfileModel?> GetProfileAsync(string username, string? currentUserId);
+        Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId);
 
-        Task<FollowModel?> GetFollowsAsync(string username, string? currentUserId);
+        Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId);
 
         /// <summary>Follows the target user; returns the target's username, or null if not found.</summary>
         Task<string?> FollowAsync(string targetUserId, string currentUserId);
@@ -29,7 +30,7 @@ namespace Heardit.Services
             _userManager = userManager;
         }
 
-        public async Task<ProfileModel?> GetProfileAsync(string username, string? currentUserId)
+        public async Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -42,7 +43,7 @@ namespace Heardit.Services
                 return null;
             }
 
-            return new ProfileModel
+            return new ProfileViewModel
             {
                 User = user,
                 Reviews = await _context.Reviews
@@ -62,7 +63,7 @@ namespace Heardit.Services
             };
         }
 
-        public async Task<FollowModel?> GetFollowsAsync(string username, string? currentUserId)
+        public async Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -75,7 +76,7 @@ namespace Heardit.Services
                 return null;
             }
 
-            return new FollowModel
+            return new FollowViewModel
             {
                 User = user,
                 FollowersList = await _context.Follows

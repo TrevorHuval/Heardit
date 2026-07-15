@@ -1,4 +1,4 @@
-namespace Heardit.Models
+namespace Heardit.ViewModels
 {
     public class ErrorViewModel
     {

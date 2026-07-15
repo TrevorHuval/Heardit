@@ -1,4 +1,4 @@
-﻿@model ProfileModel
+﻿@model ProfileViewModel
 @using Heardit.Areas.Identity.Data;
 @{
     ViewData["Title"] = "Profile";
@@ -54,7 +54,7 @@
                                     @{
                                         var followsListRoute = new Dictionary<string, string>()
                                     {
-                                    { "username", Model.User.UserName }
+                                    { "username", Model.User.UserName ?? string.Empty }
                                     };
                                     }
                                     <div class="px-3">
@@ -77,7 +77,7 @@
                             <div id="reviewsFrame" class="p-4">
                                 @foreach (Review review in Model.Reviews)
                                 {
-                                    var reviewModel = new ReviewModel() { Review = review };
+                                    var reviewModel = new ReviewViewModel() { Review = review };
                                     <partial name="_ReviewPartial" model="reviewModel" />
                                     <br>
                                 }

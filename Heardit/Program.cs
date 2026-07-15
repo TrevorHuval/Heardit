@@ -89,8 +89,8 @@ if (!app.Environment.IsDevelopment())
 // Render the friendly error view for unhandled error status codes (e.g. 404/403 from controllers).
 app.UseStatusCodePagesWithReExecute("/Home/Error");
 
-// Baseline security headers. CSP permits the Spotify embeds and the Font Awesome kit the views use;
-// it will tighten once the remote kit is replaced with a locally hosted copy.
+// Baseline security headers. CSP permits only the Spotify embeds the views use; the icon that
+// once required the remote Font Awesome kit is now an inline SVG, so no external font/script hosts.
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
@@ -99,11 +99,11 @@ app.Use(async (context, next) =>
     headers["X-Frame-Options"] = "SAMEORIGIN";
     headers["Content-Security-Policy"] =
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' https://kit.fontawesome.com https://open.spotify.com https://*.spotifycdn.com; " +
-        "style-src 'self' 'unsafe-inline' https://ka-f.fontawesome.com; " +
-        "font-src 'self' data: https://ka-f.fontawesome.com; " +
+        "script-src 'self' 'unsafe-inline' https://open.spotify.com https://*.spotifycdn.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self' data:; " +
         "img-src 'self' data: https:; " +
-        "connect-src 'self' https://kit.fontawesome.com https://ka-f.fontawesome.com https://*.spotify.com https://*.spotifycdn.com; " +
+        "connect-src 'self' https://*.spotify.com https://*.spotifycdn.com; " +
         "frame-src https://open.spotify.com https://*.spotify.com https://*.spotifycdn.com; " +
         "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
     await next();

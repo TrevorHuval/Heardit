@@ -76,7 +76,7 @@ namespace Heardit.Areas.Identity.Pages.Account
             [Required]
             [MinLength(4, ErrorMessage = "Username must be longer than 3 characters")]
             [DataType(DataType.Text)]
-            [Display(Name ="Username")]
+            [Display(Name = "Username")]
             public string UserName { get; set; }
 
             /// <summary>

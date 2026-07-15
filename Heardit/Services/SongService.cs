@@ -1,5 +1,6 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Heardit.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace Heardit.Services
@@ -7,7 +8,7 @@ namespace Heardit.Services
     public interface ISongService
     {
         /// <summary>The song plus its reviews for the song page, or null if the id can't be resolved.</summary>
-        Task<SongModel?> GetSongPageAsync(string songId);
+        Task<SongViewModel?> GetSongPageAsync(string songId);
 
         /// <summary>Returns the stored song, lazily creating it from Spotify on first view.</summary>
         Task<Song?> GetOrCreateSongAsync(string songId);
@@ -24,7 +25,7 @@ namespace Heardit.Services
             _spotify = spotify;
         }
 
-        public async Task<SongModel?> GetSongPageAsync(string songId)
+        public async Task<SongViewModel?> GetSongPageAsync(string songId)
         {
             if (string.IsNullOrWhiteSpace(songId))
             {
@@ -43,7 +44,7 @@ namespace Heardit.Services
                 .Include(r => r.User)
                 .ToListAsync();
 
-            return new SongModel { Song = song, Reviews = reviews };
+            return new SongViewModel { Song = song, Reviews = reviews };
         }
 
         public async Task<Song?> GetOrCreateSongAsync(string songId)

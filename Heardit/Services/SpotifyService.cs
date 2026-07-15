@@ -48,6 +48,11 @@ namespace Heardit.Services
             try
             {
                 _logger.LogInformation("Cache miss: fetching new releases from the Spotify API.");
+                // SpotifyAPI.Web 7 marks GetNewReleases / Albums.GetSeveral obsolete because Spotify
+                // deprecated these endpoints, but they still return data for this app's client-credentials
+                // token and back the New Releases homepage (see plan phases 1/4). Replacing the homepage
+                // data source is tracked separately; suppress the deprecation noise until then.
+#pragma warning disable CS0618 // Spotify endpoint deprecated but still functional; see comment above.
                 var newReleases = await _spotify.Browse.GetNewReleases();
 
                 var albumIds = newReleases.Albums?.Items?
@@ -62,6 +67,7 @@ namespace Heardit.Services
                 }
 
                 var albums = await _spotify.Albums.GetSeveral(new AlbumsRequest(albumIds));
+#pragma warning restore CS0618
 
                 var leadTracks = new List<SimpleTrack>();
                 foreach (var album in albums.Albums)
