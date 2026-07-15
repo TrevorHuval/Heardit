@@ -34,6 +34,7 @@ builder.Services.AddSingleton<ISpotifyClient>(sp =>
 });
 
 // Application services.
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ISpotifyService, SpotifyService>();
 builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
@@ -74,8 +75,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
-    SeedData.Initialize(services);
+    await SeedData.InitializeAsync(scope.ServiceProvider);
 }
 
 // Configure the HTTP request pipeline.
@@ -85,6 +85,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Render the friendly error view for unhandled error status codes (e.g. 404/403 from controllers).
+app.UseStatusCodePagesWithReExecute("/Home/Error");
 
 // Baseline security headers. CSP permits the Spotify embeds and the Font Awesome kit the views use;
 // it will tighten once the remote kit is replaced with a locally hosted copy.

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Memory;
 using SpotifyAPI.Web;
 
 namespace Heardit.Services
@@ -20,19 +21,33 @@ namespace Heardit.Services
         // Spotify ids are 22-character base62 strings; validate before spending an API call.
         private static readonly Regex TrackIdPattern = new("^[A-Za-z0-9]{22}$", RegexOptions.Compiled);
 
+        // Cache keys and TTLs — Spotify results change slowly, so cache to cut API calls (and stay under rate limits).
+        private const string NewReleasesCacheKey = "spotify:newreleases";
+        private static readonly TimeSpan NewReleasesTtl = TimeSpan.FromHours(1);
+        private static readonly TimeSpan TrackTtl = TimeSpan.FromHours(24);
+        private static readonly TimeSpan SearchTtl = TimeSpan.FromMinutes(5);
+
         private readonly ISpotifyClient _spotify;
+        private readonly IMemoryCache _cache;
         private readonly ILogger<SpotifyService> _logger;
 
-        public SpotifyService(ISpotifyClient spotify, ILogger<SpotifyService> logger)
+        public SpotifyService(ISpotifyClient spotify, IMemoryCache cache, ILogger<SpotifyService> logger)
         {
             _spotify = spotify;
+            _cache = cache;
             _logger = logger;
         }
 
         public async Task<IReadOnlyList<SimpleTrack>> GetNewReleaseTracksAsync()
         {
+            if (_cache.TryGetValue(NewReleasesCacheKey, out IReadOnlyList<SimpleTrack>? cached) && cached != null)
+            {
+                return cached;
+            }
+
             try
             {
+                _logger.LogInformation("Cache miss: fetching new releases from the Spotify API.");
                 var newReleases = await _spotify.Browse.GetNewReleases();
 
                 var albumIds = newReleases.Albums?.Items?
@@ -58,6 +73,11 @@ namespace Heardit.Services
                     }
                 }
 
+                if (leadTracks.Count > 0)
+                {
+                    _cache.Set(NewReleasesCacheKey, (IReadOnlyList<SimpleTrack>)leadTracks, NewReleasesTtl);
+                }
+
                 return leadTracks;
             }
             catch (APIException ex)
@@ -74,9 +94,22 @@ namespace Heardit.Services
                 return null;
             }
 
+            var cacheKey = $"spotify:track:{trackId}";
+            if (_cache.TryGetValue(cacheKey, out FullTrack? cached) && cached != null)
+            {
+                return cached;
+            }
+
             try
             {
-                return await _spotify.Tracks.Get(trackId);
+                _logger.LogInformation("Cache miss: fetching track {TrackId} from the Spotify API.", trackId);
+                var track = await _spotify.Tracks.Get(trackId);
+                if (track != null)
+                {
+                    _cache.Set(cacheKey, track, TrackTtl);
+                }
+
+                return track;
             }
             catch (APIException ex)
             {
@@ -92,10 +125,23 @@ namespace Heardit.Services
                 return Array.Empty<FullTrack>();
             }
 
+            var cacheKey = $"spotify:search:{query.Trim().ToLowerInvariant()}";
+            if (_cache.TryGetValue(cacheKey, out IReadOnlyList<FullTrack>? cached) && cached != null)
+            {
+                return cached;
+            }
+
             try
             {
+                _logger.LogInformation("Cache miss: searching the Spotify API for {Query}.", query);
                 var searchRes = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, query));
-                return searchRes.Tracks?.Items ?? new List<FullTrack>();
+                var results = searchRes.Tracks?.Items ?? new List<FullTrack>();
+                if (results.Count > 0)
+                {
+                    _cache.Set(cacheKey, (IReadOnlyList<FullTrack>)results, SearchTtl);
+                }
+
+                return results;
             }
             catch (APIException ex)
             {
