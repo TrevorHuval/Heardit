@@ -1,9 +1,1 @@
 root = true
-
-[*.cs]
-# EF Core-generated migration classes are named after the (lowercase) migration ids, which trips
-# the "type name contains only lower-cased ascii characters" analyzer. This is generated code we
-# don't rename, so silence CS8981 for the Migrations folder only.
-
-[Migrations/*.cs]
-dotnet_diagnostic.CS8981.severity = none

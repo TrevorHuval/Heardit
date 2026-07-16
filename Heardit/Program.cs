@@ -12,7 +12,7 @@ using SpotifyAPI.Web;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<HearditDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
 
 builder.Services.AddDefaultIdentity<HearditUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<HearditDbContext>();
