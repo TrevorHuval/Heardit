@@ -1,0 +1,14 @@
+# Build output — rebuilt inside the image.
+bin/
+obj/
+
+# VCS + editor/agent metadata.
+.git/
+.claude/
+
+# The test project is not part of the deployed web app.
+Heardit.Tests/
+
+# Never bake local secrets or per-user IDE state into the image.
+.env
+*.user
