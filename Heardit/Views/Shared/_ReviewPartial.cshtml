@@ -1,34 +1,30 @@
-﻿@model ReviewViewModel
+@model ReviewViewModel
 
 @using Heardit.Areas.Identity.Data
 @{
     var IsUsersPost = Model.Review.User.Id.Equals(User.GetLoggedInUserId<string>());
 }
 
-<div class="card" id="reviewCard">
-    <div class="card-header">
-        <p>Review of </p>
-        <div id="reviewHeader">
-            <a asp-controller="Songs" asp-action="Index" asp-route-songId=@Model.Review.SongId class="nav-link fs-5">@Model.Review.SongName</a>
-            <a asp-controller="Profile" asp-action="Index" asp-route-username=@Model.Review.User.UserName class="nav-link"> by @Model.Review.User.UserName</a>
-
+<article class="review">
+    <div class="review__head">
+        <div class="score score--chip" title="Rated @Model.Review.Rating out of 10">
+            <span class="score__value">@Model.Review.Rating</span><span class="score__scale">/10</span>
         </div>
-
-    </div>
-    <div class="card-body card-text">
-        <p class="fs-4 fw-bold">
-            @Model.Review.Rating
-        </p>
-        <p>
-            @Model.Review.WrittenReview
-        </p>
-        <div class="d-flex justify-content-end mt-3">
-            @if (IsUsersPost)
-            {
-                <form asp-action="Delete" asp-controller="Review" asp-route-reviewid="@Model.Review.ReviewId" method="post" class="d-inline">
-                    <button type="submit" class="btn btn-sm mr-2 btn-primary">Delete</button>
+        <div class="review__meta">
+            <a class="review__song" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Review.SongId">@Model.Review.SongName</a>
+            <span class="review__by">by <a asp-controller="Profile" asp-action="Index" asp-route-username="@Model.Review.User.UserName">@Model.Review.User.UserName</a></span>
+        </div>
+        @if (IsUsersPost)
+        {
+            <div class="review__actions">
+                <form asp-action="Delete" asp-controller="Review" asp-route-reviewid="@Model.Review.ReviewId" method="post">
+                    <button type="submit" class="btn btn-ghost-danger btn-sm" aria-label="Delete this review">Delete</button>
                 </form>
-            }
-        </div>
+            </div>
+        }
     </div>
-</div>
+    @if (!string.IsNullOrWhiteSpace(Model.Review.WrittenReview))
+    {
+        <p class="review__body">@Model.Review.WrittenReview</p>
+    }
+</article>

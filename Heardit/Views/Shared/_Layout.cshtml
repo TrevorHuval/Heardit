@@ -1,53 +1,42 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0b0d" />
     <title>@ViewData["Title"] - Heardit</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Heardit</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+    <header class="topbar">
+        <nav class="topbar__inner">
+            <a class="brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="Heardit home">
+                <svg class="brand__mark" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" />
+                    <rect x="7" y="5" width="3" height="14" rx="1.5" fill="currentColor" />
+                    <rect x="12" y="2" width="3" height="20" rx="1.5" fill="currentColor" />
+                    <rect x="17" y="7" width="3" height="10" rx="1.5" fill="currentColor" />
+                </svg>
+                <span class="brand__word">Heardit</span>
+            </a>
+
+            <form class="search" asp-controller="Search" asp-action="_Search" method="get" role="search">
+                <button id="submitSearch" type="submit" class="search__btn" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false">
+                        <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
+                    </svg>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <form asp-controller="Search" asp-action="_Search">
-                                <div class="container">
-                                    <div class="input-group">
-                                        <button id="submitSearch" type="submit" class="btn btn-outline-secondary py-2 border-0 shadow-none rounded-pill" value="Search" [disabled]="!(/^\s+/)" onClick="return document.getElementById('searchInput').value !=''">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor" aria-hidden="true" focusable="false">
-                                                <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-                                            </svg>
-                                        </button>
-                                        <span class="input-group-append">
-                                            <input id="searchInput" type="text" class="form-control py-2 shadow-none rounded-pill ms-n5" name="SearchString" required />
-                                        </span>
+                <input id="searchInput" type="text" class="search__input" name="SearchString" placeholder="Search tracks…" aria-label="Search tracks" autocomplete="off" required />
+            </form>
 
-                                    </div>
-
-                                </div>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-                <partial name="_LoginPartial" />
-
-            </div>
+            <partial name="_LoginPartial" />
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+
+    <main role="main" class="page-main">
+        @RenderBody()
+    </main>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

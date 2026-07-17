@@ -1,132 +1,110 @@
-﻿@model FollowViewModel
+@model FollowViewModel
 @using Heardit.Areas.Identity.Data;
 @{
     ViewData["Title"] = "Follow";
     var IsCurrentUser = Model.User.Id.Equals(User.GetLoggedInUserId<string>());
+    var followsListRoute = new Dictionary<string, string>()
+    {
+        { "username", Model.User.UserName ?? string.Empty }
+    };
 }
 
-<section class="h-100 gradient-custom-2">
-    <div class="container py-5 h-100">
-        <div class="row d-flex justify-content-center align-items-center h-100">
-            <div class="col col-lg-9 col-xl-7">
-                <div id="profileFrame" class="card">
-                    <div class="rounded-top text-white d-flex flex-row" style="background-color: #000; height:200px;">
-                        <div class="ms-4 d-flex flex-column" style="width: 150px;">
-                            <img id="profilePic" src="https://w0.peakpx.com/wallpaper/946/203/HD-wallpaper-lsu-sailor-mike-death-death-valley-fighting-fighting-tigers-geaux-geaux-tigers-louisiana-louisiana-state-sailor-mike-state-tigers-university-valley.jpg"
-                                 alt="Generic placeholder image" class="img-fluid img-thumbnail mt-4 mb-2"
-                                 style="width: 150px; z-index: 1">
-                        </div>
-                        <div class="ms-3" style="margin-top: 130px;">
-                            <h5>@Model.User.UserName</h5>
-                        </div>
-                    </div>
-                    <div id="profileButtonsFrame" class="p-4">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-6">
-                                    @if (IsCurrentUser)
-                                    {
-                                        <a id="manage" class="btn btn-primary" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage" style="z-index: 1;">Edit Profile</a>
-                                    }
-                                    else
-                                    {
-                                        var followRoute = new Dictionary<string, string>()
-                                    {
-                                    { "userId", Model.User.Id }
-                                    };
+@functions {
+    static string Initials(string? name)
+    {
+        var n = (name ?? "").Trim();
+        if (n.Length == 0) return "?";
+        var parts = n.Split(new[] { ' ', '_', '-', '.' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}";
+        return n.Length >= 2 ? n.Substring(0, 2).ToUpper() : n.ToUpper();
+    }
+}
 
-                                        if (Model.IsFollowing)
-                                        {
-                                            <form asp-action="UnFollow" asp-controller="Profile" asp-all-route-data="followRoute" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-primary">Unfollow</button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <form asp-action="Follow" asp-controller="Profile" asp-all-route-data="followRoute" method="post" class="d-inline">
-                                                <button type="submit" class="btn btn-primary">Follow</button>
-                                            </form>
-                                        }
-                                    }
-                                </div>
-                                <div class="col-6 d-flex justify-content-end text-center py-1">
-                                    @{
-                                        var followsListRoute = new Dictionary<string, string>()
-                                    {
-                                    { "username", Model.User.UserName ?? string.Empty }
-                                    };
-                                    }
-                                    <div class="px-3">
-                                        <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowersCount</a>
-                                        <p class="small text-light mb-0">Followers</p>
-                                    </div>
-                                    <div>
-                                        <a class="mb-1 h5" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">@Model.FollowingCount</a>
-                                        <p class="small text-light mb-0">Following</p>
-                                    </div>
+<div class="follows">
+    <header class="profile__banner">
+        <div class="avatar avatar--xl avatar--brand" aria-hidden="true">@Initials(Model.User.UserName)</div>
+        <div class="profile__id">
+            <p class="eyebrow">Listener</p>
+            <h1 class="profile__name">@Model.User.UserName</h1>
+        </div>
+        <div class="profile__stats">
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+                <span class="stat__num tnum">@Model.FollowersCount</span>
+                <span class="stat__label">Followers</span>
+            </a>
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+                <span class="stat__num tnum">@Model.FollowingCount</span>
+                <span class="stat__label">Following</span>
+            </a>
+        </div>
+        <div class="profile__action">
+            @if (IsCurrentUser)
+            {
+                <a id="manage" class="btn btn-ghost" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Edit profile</a>
+            }
+            else
+            {
+                var followRoute = new Dictionary<string, string>() { { "userId", Model.User.Id } };
+                if (Model.IsFollowing)
+                {
+                    <form asp-action="UnFollow" asp-controller="Profile" asp-all-route-data="followRoute" method="post">
+                        <button type="submit" class="btn btn-ghost">Unfollow</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Follow" asp-controller="Profile" asp-all-route-data="followRoute" method="post">
+                        <button type="submit" class="btn btn-primary">Follow</button>
+                    </form>
+                }
+            }
+        </div>
+    </header>
 
-                                </div>
-                            </div>
-                        </div>
+    <section class="profile__section">
+        <div class="tabs nav" role="tablist">
+            <button class="tab active" data-bs-toggle="tab" data-bs-target="#Followers" id="Followers-tab" type="button" role="tab" aria-controls="Followers" aria-selected="true">Followers</button>
+            <button class="tab" data-bs-toggle="tab" data-bs-target="#Following" id="Following-tab" type="button" role="tab" aria-controls="Following" aria-selected="false">Following</button>
+        </div>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="Followers" role="tabpanel" aria-labelledby="Followers-tab">
+                @if (Model.FollowersList.Count != 0)
+                {
+                    <div class="user-list">
+                        @foreach (HearditUser user in Model.FollowersList)
+                        {
+                            <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
+                                <span class="avatar avatar--sm avatar--brand" aria-hidden="true">@Initials(user.UserName)</span>
+                                <span class="user-row__name">@user.UserName</span>
+                                <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </a>
+                        }
                     </div>
-                    <div id="followsFrame" class="p-4">
-                        <div class="container">
-                            <div class="row">
-                                <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" data-bs-toggle="tab" id="Followers-tab" data-toggle="tab" href="#Followers"
-                                           role="tab" aria-controls="Followers" aria-selected="true">Followers</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" data-bs-toggle="tab" id="Following-tab" data-toggle="tab" href="#Following"
-                                           role="tab" aria-controls="Following" aria-selected="false">Following</a>
-                                    </li>
-                                </ul>
-                                <div class="tab-content" id="myTabContent">
-                                    <div class="tab-pane show active" id="Followers" role="tabpanel"
-                                         aria-labelledby="Followers-tab">
-                                        @if (Model.FollowersList.Count != 0)
-                                        {
-                                            @foreach (Heardit.Areas.Identity.Data.HearditUser user in Model.FollowersList)
-                                            {
-                                                <div id="followerCard" class="card">
-                                                    <div class="card-body">
-                                                        <a class="nav-link h5" asp-controller="Profile" asp-action="Index" asp-route-username=@user.UserName>@user.UserName</a>
-                                                    </div>
-                                                </div>
-                                                <br>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <p>This user is not followed by anyone.</p>
-                                        }
-                                    </div>
-                                    <div class="tab-pane" id="Following" role="tabpanel" aria-labelledby="Following-tab">
-                                        @if (Model.FollowingList.Count != 0)
-                                        {
-                                            @foreach (Heardit.Areas.Identity.Data.HearditUser user in Model.FollowingList)
-                                            {
-                                                <div id="followerCard" class="card">
-                                                    <div class="card-body">
-                                                        <a class="nav-link h5" asp-controller="Profile" asp-action="Index" asp-route-username=@user.UserName>@user.UserName</a>
-                                                    </div>
-                                                </div>
-                                                <br>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <p>This user is not following anyone.</p>
-                                        }
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                }
+                else
+                {
+                    <div class="empty">This listener isn't followed by anyone yet.</div>
+                }
+            </div>
+            <div class="tab-pane fade" id="Following" role="tabpanel" aria-labelledby="Following-tab">
+                @if (Model.FollowingList.Count != 0)
+                {
+                    <div class="user-list">
+                        @foreach (HearditUser user in Model.FollowingList)
+                        {
+                            <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
+                                <span class="avatar avatar--sm avatar--brand" aria-hidden="true">@Initials(user.UserName)</span>
+                                <span class="user-row__name">@user.UserName</span>
+                                <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                            </a>
+                        }
                     </div>
-                </div>
-
+                }
+                else
+                {
+                    <div class="empty">This listener isn't following anyone yet.</div>
+                }
             </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>

@@ -1,17 +1,38 @@
-﻿@model IEnumerable<SpotifyAPI.Web.FullTrack>
-<table class="table">
-    <tbody>
+@model IEnumerable<SpotifyAPI.Web.FullTrack>
+@{
+    ViewData["Title"] = "Search";
+    var query = Context.Request.Query["SearchString"].ToString();
+}
+
+<div class="feed__head">
+    <h1 class="feed__title">Search results</h1>
+    @if (!string.IsNullOrWhiteSpace(query))
+    {
+        <p class="feed__sub">Showing tracks for &ldquo;@query&rdquo;.</p>
+    }
+</div>
+
+@if (Model.Any())
+{
+    <div class="feed">
         @foreach (var item in Model)
         {
-            <tr>
-                <td>
-                    <div id="iframeOverlay" class="container">
-                        <iframe id="@Html.DisplayFor(modelItem => item.Id)" style="border-radius:12px" src="https://open.spotify.com/embed/track/@Html.DisplayFor(modelItem => item.Id)?utm_source=generator&theme=0" width="100%" height="200" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                        <a class="overlay" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@item.Id"></a>
-                    </div>
-                </td>
-            </tr>
+            var artists = item.Artists != null ? string.Join(", ", item.Artists.Select(a => a.Name)) : string.Empty;
+            <article class="track">
+                <div class="track__player">
+                    <iframe src="https://open.spotify.com/embed/track/@item.Id?utm_source=generator&theme=0" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="@item.Name by @artists"></iframe>
+                </div>
+                <a class="track__reviews" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@item.Id" aria-label="See reviews for @item.Name">
+                    <span>See reviews</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+            </article>
         }
-    </tbody>
-</table>
-
+    </div>
+}
+else
+{
+    <div class="empty">No tracks matched your search. Try a different title or artist.</div>
+}

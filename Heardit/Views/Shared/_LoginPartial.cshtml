@@ -1,28 +1,35 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using Heardit.Areas.Identity.Data
 
 @inject SignInManager<HearditUser> SignInManager
 @inject UserManager<HearditUser> UserManager
 
-<ul class="navbar-nav">
+@functions {
+    static string Initials(string? name)
+    {
+        var n = (name ?? "").Trim();
+        if (n.Length == 0) return "?";
+        var parts = n.Split(new[] { ' ', '_', '-', '.' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2) return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}";
+        return n.Length >= 2 ? n.Substring(0, 2).ToUpper() : n.ToUpper();
+    }
+}
+
+<div class="nav-auth">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-            <a id="manage" class="nav-link" href="/Profile?username=@UserManager.GetUserName(User)" title="Manage">@UserManager.GetUserName(User)</a>
-    </li>
-    <li class="nav-item">
-        <form id="logoutForm" class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button id="logout" type="submit" class="nav-link btn btn-link">Logout</button>
-        </form>
-    </li>
+    var userName = UserManager.GetUserName(User);
+    <a id="manage" class="nav-user" href="/Profile?username=@userName" title="@userName">
+        <span class="avatar avatar--xs avatar--brand" aria-hidden="true">@Initials(userName)</span>
+        <span class="nav-user__name">@userName</span>
+    </a>
+    <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+        <button id="logout" type="submit" class="btn btn-ghost btn-sm">Log out</button>
+    </form>
 }
 else
 {
-    <li class="nav-item">
-        <a class="nav-link" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" id="login" asp-area="Identity" asp-page="/Account/Login">Login</a>
-    </li>
+    <a class="btn btn-ghost btn-sm" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    <a class="btn btn-primary btn-sm" id="login" asp-area="Identity" asp-page="/Account/Login">Log in</a>
 }
-</ul>
+</div>
