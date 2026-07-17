@@ -5,16 +5,42 @@ VisualStudioVersion = 17.4.33103.184
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Heardit", "Heardit\Heardit.csproj", "{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Heardit.Tests", "Heardit\Heardit.Tests\Heardit.Tests.csproj", "{C41C28DB-0737-43DA-AF9C-8053C98CEE83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|x64.Build.0 = Debug|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Debug|x86.Build.0 = Debug|Any CPU
 		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|x64.ActiveCfg = Release|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|x64.Build.0 = Release|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|x86.ActiveCfg = Release|Any CPU
+		{E71FA9B9-4D29-4095-83D1-A25D989A7EEB}.Release|x86.Build.0 = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|x64.Build.0 = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Debug|x86.Build.0 = Debug|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|x64.ActiveCfg = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|x64.Build.0 = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|x86.ActiveCfg = Release|Any CPU
+		{C41C28DB-0737-43DA-AF9C-8053C98CEE83}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

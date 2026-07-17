@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>76c3229a-98fc-4c8c-9ae6-27e8390dcc90</UserSecretsId>
+    <!-- The test project lives in a subfolder of the web project root; keep the Web SDK from globbing its sources into this assembly. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Heardit.Tests/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
