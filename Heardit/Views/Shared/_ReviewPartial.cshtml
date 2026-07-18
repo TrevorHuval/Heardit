@@ -3,16 +3,39 @@
 @using Heardit.Areas.Identity.Data
 @{
     var IsUsersPost = Model.Review.User.Id.Equals(User.GetLoggedInUserId<string>());
+    var createdUtc = DateTime.SpecifyKind(Model.Review.CreatedAt, DateTimeKind.Utc);
+    var createdUnix = new DateTimeOffset(createdUtc).ToUnixTimeSeconds();
 }
 
-<article class="review">
+@functions {
+    static string TimeAgo(DateTime createdUtc)
+    {
+        var span = DateTime.UtcNow - createdUtc;
+        if (span.TotalSeconds < 60) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
+        if (span.TotalDays < 30) return $"{(int)(span.TotalDays / 7)}w ago";
+        if (span.TotalDays < 365) return $"{(int)(span.TotalDays / 30)}mo ago";
+        return $"{(int)(span.TotalDays / 365)}y ago";
+    }
+}
+
+<article class="review" data-rating="@Model.Review.Rating" data-created="@createdUnix">
     <div class="review__head">
         <div class="score score--chip" title="Rated @Model.Review.Rating out of 10">
             <span class="score__value">@Model.Review.Rating</span><span class="score__scale">/10</span>
         </div>
         <div class="review__meta">
             <a class="review__song" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Review.SongId">@Model.Review.SongName</a>
-            <span class="review__by">by <a asp-controller="Profile" asp-action="Index" asp-route-username="@Model.Review.User.UserName">@Model.Review.User.UserName</a></span>
+            <span class="review__by">
+                by <a asp-controller="Profile" asp-action="Index" asp-route-username="@Model.Review.User.UserName">@Model.Review.User.UserName</a>
+                <span class="review__time">· @TimeAgo(createdUtc)</span>
+                @if (Model.Review.UpdatedAt != null)
+                {
+                    <span class="review__edited">· edited</span>
+                }
+            </span>
         </div>
         @if (IsUsersPost)
         {

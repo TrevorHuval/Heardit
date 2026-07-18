@@ -42,6 +42,7 @@ namespace Heardit.Services
                 .AsNoTracking()
                 .Where(r => r.SongId == songId)
                 .Include(r => r.User)
+                .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
             return new SongViewModel { Song = song, Reviews = reviews };

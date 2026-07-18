@@ -1,0 +1,26 @@
+@model FeedItemViewModel
+
+<article class="track">
+    <div class="track__player">
+        <iframe src="https://open.spotify.com/embed/track/@Model.Id?utm_source=generator&theme=0" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="@Model.Name by @Model.Artists"></iframe>
+    </div>
+    <a class="track__reviews" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Id" aria-label="See reviews for @Model.Name">
+        @if (Model.ReviewCount > 0)
+        {
+            <span class="track__stat">
+                <span class="score score--mini" title="Average @Model.AverageRating out of 10"><span class="score__value">@Model.AverageRating</span><span class="score__scale">/10</span></span>
+                <span class="count">@Model.ReviewCount @(Model.ReviewCount == 1 ? "review" : "reviews")</span>
+            </span>
+        }
+        else
+        {
+            <span class="track__prompt">Be the first to review</span>
+        }
+        <span class="track__cta">
+            Reviews
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        </span>
+    </a>
+</article>

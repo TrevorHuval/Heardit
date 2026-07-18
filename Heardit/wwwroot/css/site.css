@@ -460,6 +460,20 @@ a:hover {
     width: 100%;
 }
 
+/* Disabled — neutral and clearly inert, overriding Bootstrap's default blue. */
+.btn:disabled,
+.btn[disabled],
+.btn-primary:disabled,
+.btn-primary.disabled {
+    background-color: var(--surface-3);
+    border-color: transparent;
+    color: var(--text-4);
+    opacity: 1;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 /* Bootstrap link-buttons used in the nav. */
 .btn-link {
     background: none;
@@ -755,9 +769,10 @@ a:hover {
 }
 
 /* ==========================================================================
-   Fader (rating slider) — an EQ fader with a green fill
+   Rating meter — discrete 1–10 "level" control (rising green bars).
+   Bars, keyboard, and the hidden-input binding are driven by site.js.
    ========================================================================== */
-.fader {
+.rating-field {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
@@ -767,6 +782,7 @@ a:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-3);
 }
 
 .fader__label {
@@ -782,76 +798,59 @@ a:hover {
     color: var(--text-4);
 }
 
-/* Base reset for the range input. The green fill is driven by --_p (0–100%),
-   set from JS on input; Firefox also gets a native progress fill. */
-input[type="range"].range {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 22px;
-    margin: 0;
-    background: transparent;
+.rating-readout {
+    font-variant-numeric: tabular-nums;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-4);
+    letter-spacing: -0.01em;
+}
+
+.rating-readout.is-rated {
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    color: var(--brand);
+}
+
+.meter {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 46px;
+    padding: 4px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-}
-
-input[type="range"].range:focus {
     outline: none;
+    touch-action: manipulation;
 }
 
-input[type="range"].range::-webkit-slider-runnable-track {
-    height: 6px;
-    border-radius: var(--radius-pill);
-    background-color: var(--surface-3);
-    background-image: linear-gradient(var(--brand), var(--brand));
-    background-repeat: no-repeat;
-    background-size: var(--_p, 0%) 100%;
+.meter:focus-visible {
+    box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
-input[type="range"].range::-moz-range-track {
-    height: 6px;
-    border-radius: var(--radius-pill);
-    background-color: var(--surface-3);
+.meter .bar {
+    flex: 1;
+    min-width: 0;
+    border-radius: 3px;
+    background: var(--surface-3);
+    transition: background-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
 }
 
-input[type="range"].range::-moz-range-progress {
-    height: 6px;
-    border-radius: var(--radius-pill);
-    background-color: var(--brand);
+.meter .bar.on {
+    background: var(--brand);
 }
 
-input[type="range"].range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    height: 18px;
-    width: 18px;
-    margin-top: -6px;
-    border-radius: 50%;
-    background: #fff;
-    border: 0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.2);
-    transition: transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+.meter .bar.on.hot {
+    background: var(--brand-bright);
+    box-shadow: 0 0 12px rgba(29, 185, 84, 0.55);
 }
 
-input[type="range"].range::-moz-range-thumb {
-    height: 18px;
-    width: 18px;
-    border-radius: 50%;
-    background: #fff;
-    border: 0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.2);
-    transition: transform var(--dur-1) var(--ease);
+.meter .bar.preview {
+    background: color-mix(in srgb, var(--brand) 45%, var(--surface-3));
 }
 
-input[type="range"].range:hover::-webkit-slider-thumb,
-input[type="range"].range:focus-visible::-webkit-slider-thumb {
-    transform: scale(1.14);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 0 6px var(--brand-soft);
-}
-
-input[type="range"].range:hover::-moz-range-thumb,
-input[type="range"].range:focus-visible::-moz-range-thumb {
-    transform: scale(1.14);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 0 0 6px var(--brand-soft);
+@media (prefers-reduced-motion: reduce) {
+    .meter .bar { transition: none; }
 }
 
 /* ==========================================================================
@@ -1302,6 +1301,205 @@ textarea.form-control {
 .state__req code {
     color: var(--text-2);
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ==========================================================================
+   Score — compact variant (feed cards)
+   ========================================================================== */
+.score--mini {
+    font-size: var(--fs-base);
+    gap: 0.08em;
+}
+
+.score--mini .score__scale {
+    font-size: 0.55em;
+}
+
+/* ==========================================================================
+   Feed card — review activity in the footer
+   ========================================================================== */
+.track__stat {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.track__stat .count {
+    color: var(--text-3);
+    font-weight: 600;
+}
+
+.track__prompt {
+    color: var(--text-3);
+    font-weight: 600;
+}
+
+.track__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    color: var(--text-2);
+    font-weight: 700;
+}
+
+.track__reviews:hover .track__cta {
+    color: var(--text-1);
+}
+
+/* ==========================================================================
+   Flash message (post/update/delete confirmation)
+   ========================================================================== */
+.flash {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-5);
+    background: var(--brand-soft);
+    border: 1px solid rgba(29, 185, 84, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--text-1);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+
+.flash.is-leaving {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+.flash__icon {
+    display: inline-flex;
+    color: var(--brand);
+    flex: 0 0 auto;
+}
+
+.flash__text {
+    flex: 1 1 auto;
+}
+
+.flash__close {
+    flex: 0 0 auto;
+    background: none;
+    border: 0;
+    color: var(--text-3);
+    cursor: pointer;
+    padding: 2px;
+    line-height: 0;
+    border-radius: var(--radius-xs);
+}
+
+.flash__close:hover {
+    color: var(--text-1);
+}
+
+/* ==========================================================================
+   Your review summary + composer edit mode
+   ========================================================================== */
+.your-review {
+    padding: var(--space-4) var(--space-5);
+    background: var(--surface-1);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-lg);
+}
+
+.your-review__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.your-review__label {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.your-review__actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.your-review__body {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.your-review__text {
+    margin: 0;
+    color: var(--text-2);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.composer__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+/* ==========================================================================
+   Reviews header + sort control + meta
+   ========================================================================== */
+.reviews-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+}
+
+.sort {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-1);
+    border-radius: var(--radius-pill);
+}
+
+.sort__btn {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    color: var(--text-3);
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+
+.sort__btn:hover {
+    color: var(--text-1);
+}
+
+.sort__btn.active {
+    background: var(--surface-3);
+    color: var(--text-1);
+}
+
+.review__time {
+    color: var(--text-4);
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+}
+
+.review__edited {
+    color: var(--text-4);
+    font-size: var(--fs-xs);
+    font-style: italic;
 }
 
 /* ==========================================================================

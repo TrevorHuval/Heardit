@@ -30,6 +30,11 @@ namespace Heardit.Controllers
         {
             var result = await _reviewService.DeleteReviewAsync(reviewid, User.GetLoggedInUserId<string>());
 
+            if (result.Status == ReviewDeleteStatus.Deleted)
+            {
+                TempData["Flash"] = "Your review was deleted.";
+            }
+
             return result.Status switch
             {
                 ReviewDeleteStatus.NotFound => NotFound(),

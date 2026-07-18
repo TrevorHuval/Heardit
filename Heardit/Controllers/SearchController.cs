@@ -1,17 +1,19 @@
 using Heardit.Services;
+using Heardit.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using SpotifyAPI.Web;
 
 namespace Heardit.Controllers
 {
     public class SearchController : Controller
     {
         private readonly ISpotifyService _spotify;
+        private readonly IReviewService _reviewService;
 
-        public SearchController(ISpotifyService spotify)
+        public SearchController(ISpotifyService spotify, IReviewService reviewService)
         {
             _spotify = spotify;
+            _reviewService = reviewService;
         }
 
         [EnableRateLimiting("spotify")]
@@ -19,11 +21,19 @@ namespace Heardit.Controllers
         {
             if (string.IsNullOrWhiteSpace(SearchString))
             {
-                return View("~/Views/Home/Index.cshtml", Array.Empty<SimpleTrack>());
+                return RedirectToAction("Index", "Home");
             }
 
             var results = await _spotify.SearchTracksAsync(SearchString);
-            return View(results);
+            var feed = results.Select(t => new FeedItemViewModel
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Artists = string.Join(", ", t.Artists.Select(a => a.Name))
+            }).ToList();
+
+            await FeedStats.ApplyAsync(_reviewService, feed);
+            return View(feed);
         }
     }
 }

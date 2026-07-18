@@ -1,18 +1,54 @@
 @model ErrorViewModel
 @{
-    ViewData["Title"] = "Something went wrong";
+    var code = Model.StatusCode;
+    string title, text;
+    switch (code)
+    {
+        case 404:
+            ViewData["Title"] = "Not found";
+            title = "We couldn't find that";
+            text = "That track or page may have moved, or never existed. Let's get you back to the music.";
+            break;
+        case 429:
+            ViewData["Title"] = "Slow down";
+            title = "Easy on the dial";
+            text = "You're browsing faster than Spotify allows. Give it a few seconds, then try again.";
+            break;
+        default:
+            ViewData["Title"] = "Something went wrong";
+            title = "Something went wrong";
+            text = "We hit an unexpected snag while loading this page. Try again, or head back to new releases.";
+            break;
+    }
 }
 
 <div class="state">
     <span class="state__badge" aria-hidden="true">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-            <path d="M12 8v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            <circle cx="12" cy="16.5" r="1.25" fill="currentColor" />
-            <path d="M12 3.5 21 19H3L12 3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-        </svg>
+        @if (code == 429)
+        {
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="13" r="8" stroke="currentColor" stroke-width="2" />
+                <path d="M12 9v4l2.5 2M9 2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+        }
+        else if (code == 404)
+        {
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+                <path d="m20 20-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        }
+        else
+        {
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M12 8v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle cx="12" cy="16.5" r="1.25" fill="currentColor" />
+                <path d="M12 3.5 21 19H3L12 3.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+        }
     </span>
-    <h1 class="state__title">Something went wrong</h1>
-    <p class="state__text">We hit an unexpected snag while loading this page. Try again, or head back to new releases.</p>
+    <h1 class="state__title">@title</h1>
+    <p class="state__text">@text</p>
 
     @if (Model.ShowRequestId)
     {

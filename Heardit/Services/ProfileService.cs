@@ -50,6 +50,7 @@ namespace Heardit.Services
                     .AsNoTracking()
                     .Where(r => r.User.UserName == username)
                     .Include(r => r.User)
+                    .OrderByDescending(r => r.CreatedAt)
                     .ToListAsync(),
                 IsFollowing = await _context.Follows
                     .AsNoTracking()

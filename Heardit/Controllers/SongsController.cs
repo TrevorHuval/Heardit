@@ -44,12 +44,14 @@ namespace Heardit.Controllers
                 return NotFound();
             }
 
-            await _reviewService.AddReviewAsync(
+            var result = await _reviewService.AddOrUpdateReviewAsync(
                 input.WrittenReview ?? string.Empty,
                 input.Rating,
                 input.SongId,
                 song.Title ?? string.Empty,
                 User.GetLoggedInUserId<string>());
+
+            TempData["Flash"] = result == ReviewUpsertStatus.Updated ? "Your review was updated." : "Your review was posted.";
 
             return RedirectToAction(nameof(Index), new { songId = input.SongId });
         }

@@ -3,15 +3,12 @@
 @using Heardit.Models;
 @{
     ViewData["Title"] = "Song";
-    var UserAlreadyReviewed = false;
-    decimal avgRating = decimal.Zero;
+    var userId = User.GetLoggedInUserId<string>();
+    var myReview = Model.Reviews.FirstOrDefault(r => r.User.Id == userId);
+    var others = Model.Reviews.Where(r => r.User.Id != userId).ToList();
     var reviewCount = Model.Reviews.Count;
-    if (reviewCount > 0)
-    {
-        var ratingList = Model.Reviews.Select(r => r.Rating).ToList();
-        avgRating = Math.Round(ratingList.Average(), 2);
-        UserAlreadyReviewed = Model.Reviews.Where(r => r.User.Id.Equals(User.GetLoggedInUserId<string>())).FirstOrDefault() != null;
-    }
+    var avgRating = reviewCount > 0 ? Math.Round(Model.Reviews.Select(r => r.Rating).Average(), 1) : 0;
+    var editing = myReview != null; // composer starts collapsed when a review already exists
 }
 
 <div class="song">
@@ -33,61 +30,77 @@
             </div>
         }
 
-        @if (!UserAlreadyReviewed)
+        @if (myReview != null)
         {
-            <form class="composer" asp-action="SubmitReview" asp-controller="Songs" asp-route-songId="@Model.Song.Id" method="post">
-                <h2 class="composer__title">Rate this track</h2>
-                <div class="fader">
-                    <div class="fader__head">
-                        <label for="rating" class="fader__label">Your rating</label>
-                        <output for="rating" id="ratingValue" class="score score--input">1.0</output>
+            <div class="your-review" id="yourReview">
+                <div class="your-review__head">
+                    <span class="your-review__label">Your review</span>
+                    <div class="your-review__actions">
+                        <button class="btn btn-ghost btn-sm" type="button" data-edit-review>Edit</button>
+                        <form asp-action="Delete" asp-controller="Review" asp-route-reviewid="@myReview.ReviewId" method="post">
+                            <button type="submit" class="btn btn-ghost-danger btn-sm">Delete</button>
+                        </form>
                     </div>
-                    <input type="range" class="range" id="rating" name="rating" min="1" max="10" step="0.1" value="1" />
-                    <div class="fader__scale"><span>1</span><span>10</span></div>
                 </div>
-                <textarea class="input" id="writtenReview" name="writtenReview" rows="3" placeholder="Share your thoughts on this track… (optional)"></textarea>
-                <div class="form-actions">
-                    <button class="btn btn-primary" type="submit">Post review</button>
+                <div class="your-review__body">
+                    <div class="score score--chip" title="You rated this @myReview.Rating out of 10">
+                        <span class="score__value">@myReview.Rating</span><span class="score__scale">/10</span>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(myReview.WrittenReview))
+                    {
+                        <p class="your-review__text">@myReview.WrittenReview</p>
+                    }
                 </div>
-            </form>
+            </div>
         }
 
+        <form class="composer" id="composer" asp-action="SubmitReview" asp-controller="Songs" asp-route-songId="@Model.Song.Id" method="post" hidden="@editing">
+            <h2 class="composer__title">@(editing ? "Edit your review" : "Rate this track")</h2>
+            <div class="rating-field">
+                <div class="fader__head">
+                    <label class="fader__label" id="ratingLabel">Your rating</label>
+                    <output class="rating-readout" id="ratingValue" for="rating">Not rated</output>
+                </div>
+                <div class="meter js-rating-meter" role="slider" tabindex="0"
+                     aria-labelledby="ratingLabel" aria-valuemin="1" aria-valuemax="10" aria-valuenow="0"
+                     data-input="rating" data-output="ratingValue" data-submit="postReview"></div>
+                <div class="fader__scale"><span>1 · skip it</span><span>on repeat · 10</span></div>
+                <input type="hidden" name="rating" id="rating" value="@(myReview != null ? Math.Round(myReview.Rating).ToString("0") : "")" />
+            </div>
+            <textarea class="input" name="writtenReview" rows="3" placeholder="Share your thoughts on this track… (optional)">@(myReview?.WrittenReview)</textarea>
+            <div class="composer__actions">
+                @if (editing)
+                {
+                    <button class="btn btn-ghost" type="button" data-cancel-edit>Cancel</button>
+                }
+                <button class="btn btn-primary" id="postReview" type="submit" disabled="@(!editing)">@(editing ? "Update review" : "Post review")</button>
+            </div>
+        </form>
+
         <section class="song__reviews">
-            <h2 class="section-title">Reviews</h2>
-            @if (reviewCount > 0)
+            <div class="reviews-head">
+                <h2 class="section-title">Reviews</h2>
+                @if (others.Count > 1)
+                {
+                    <div class="sort" data-sort-group role="group" aria-label="Sort reviews">
+                        <button class="sort__btn active" type="button" data-sort="new" aria-pressed="true">Newest</button>
+                        <button class="sort__btn" type="button" data-sort="high" aria-pressed="false">Highest</button>
+                    </div>
+                }
+            </div>
+            @if (others.Count > 0)
             {
-                <div class="reviews">
-                    @foreach (Review review in Model.Reviews)
+                <div class="reviews" id="reviewList">
+                    @foreach (Review review in others)
                     {
-                        var reviewModel = new ReviewViewModel() { Review = review };
-                        <partial name="_ReviewPartial" model="reviewModel" />
+                        <partial name="_ReviewPartial" model="@(new ReviewViewModel { Review = review })" />
                     }
                 </div>
             }
             else
             {
-                <div class="empty">No reviews yet — be the first to rate this track.</div>
+                <div class="empty">@(myReview != null ? "No other reviews yet." : "No reviews yet — be the first to rate this track.")</div>
             }
         </section>
     </div>
 </div>
-
-@section scripts {
-    <script type="text/javascript">
-        (function () {
-            var slider = document.getElementById('rating');
-            var out = document.getElementById('ratingValue');
-            if (!slider) return;
-            function update() {
-                var v = parseFloat(slider.value);
-                var min = parseFloat(slider.min);
-                var max = parseFloat(slider.max);
-                var pct = ((v - min) / (max - min)) * 100;
-                slider.style.setProperty('--_p', pct + '%');
-                if (out) { out.textContent = v.toFixed(1); }
-            }
-            slider.addEventListener('input', update);
-            update();
-        })();
-    </script>
-}

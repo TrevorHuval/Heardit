@@ -7,6 +7,7 @@
     {
         { "username", Model.User.UserName ?? string.Empty }
     };
+    var followingActive = string.Equals(Context.Request.Query["tab"], "following", StringComparison.OrdinalIgnoreCase);
 }
 
 @functions {
@@ -28,11 +29,11 @@
             <h1 class="profile__name">@Model.User.UserName</h1>
         </div>
         <div class="profile__stats">
-            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="followers">
                 <span class="stat__num tnum">@Model.FollowersCount</span>
                 <span class="stat__label">Followers</span>
             </a>
-            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="following">
                 <span class="stat__num tnum">@Model.FollowingCount</span>
                 <span class="stat__label">Following</span>
             </a>
@@ -63,11 +64,11 @@
 
     <section class="profile__section">
         <div class="tabs nav" role="tablist">
-            <button class="tab active" data-bs-toggle="tab" data-bs-target="#Followers" id="Followers-tab" type="button" role="tab" aria-controls="Followers" aria-selected="true">Followers</button>
-            <button class="tab" data-bs-toggle="tab" data-bs-target="#Following" id="Following-tab" type="button" role="tab" aria-controls="Following" aria-selected="false">Following</button>
+            <button class="tab @(followingActive ? "" : "active")" data-bs-toggle="tab" data-bs-target="#Followers" id="Followers-tab" type="button" role="tab" aria-controls="Followers" aria-selected="@(followingActive ? "false" : "true")">Followers</button>
+            <button class="tab @(followingActive ? "active" : "")" data-bs-toggle="tab" data-bs-target="#Following" id="Following-tab" type="button" role="tab" aria-controls="Following" aria-selected="@(followingActive ? "true" : "false")">Following</button>
         </div>
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="Followers" role="tabpanel" aria-labelledby="Followers-tab">
+            <div class="tab-pane fade @(followingActive ? "" : "show active")" id="Followers" role="tabpanel" aria-labelledby="Followers-tab">
                 @if (Model.FollowersList.Count != 0)
                 {
                     <div class="user-list">
@@ -86,7 +87,7 @@
                     <div class="empty">This listener isn't followed by anyone yet.</div>
                 }
             </div>
-            <div class="tab-pane fade" id="Following" role="tabpanel" aria-labelledby="Following-tab">
+            <div class="tab-pane fade @(followingActive ? "show active" : "")" id="Following" role="tabpanel" aria-labelledby="Following-tab">
                 @if (Model.FollowingList.Count != 0)
                 {
                     <div class="user-list">

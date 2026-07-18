@@ -28,11 +28,11 @@
             <h1 class="profile__name">@Model.User.UserName</h1>
         </div>
         <div class="profile__stats">
-            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="followers">
                 <span class="stat__num tnum">@Model.FollowersCount</span>
                 <span class="stat__label">Followers</span>
             </a>
-            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute">
+            <a class="stat" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="following">
                 <span class="stat__num tnum">@Model.FollowingCount</span>
                 <span class="stat__label">Following</span>
             </a>

@@ -12,16 +12,30 @@ namespace Heardit.Services
         Deleted
     }
 
+    public enum ReviewUpsertStatus
+    {
+        Failed,
+        Added,
+        Updated
+    }
+
     public record ReviewDeleteResult(ReviewDeleteStatus Status, string? SongId);
+
+    /// <summary>Aggregate review stats for a single song, used by the feed cards.</summary>
+    public record SongReviewStats(decimal Average, int Count);
 
     public interface IReviewService
     {
         Task<Review?> GetReviewAsync(string reviewId);
 
-        Task AddReviewAsync(string writtenReview, decimal rating, string songId, string songName, string userId);
+        /// <summary>Creates the user's review for a song, or updates it if they already reviewed it.</summary>
+        Task<ReviewUpsertStatus> AddOrUpdateReviewAsync(string writtenReview, decimal rating, string songId, string songName, string userId);
 
         /// <summary>Deletes a review only if it belongs to the current user.</summary>
         Task<ReviewDeleteResult> DeleteReviewAsync(string reviewId, string currentUserId);
+
+        /// <summary>Average rating and review count per song id, for the tracks shown in a feed.</summary>
+        Task<IReadOnlyDictionary<string, SongReviewStats>> GetSongStatsAsync(IEnumerable<string> songIds);
     }
 
     public class ReviewService : IReviewService
@@ -48,17 +62,31 @@ namespace Heardit.Services
                 .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
         }
 
-        public async Task AddReviewAsync(string writtenReview, decimal rating, string songId, string songName, string userId)
+        public async Task<ReviewUpsertStatus> AddOrUpdateReviewAsync(string writtenReview, decimal rating, string songId, string songName, string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return;
+                return ReviewUpsertStatus.Failed;
+            }
+
+            // One review per user per song: update in place if it already exists.
+            var existing = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.SongId == songId && r.User.Id == userId);
+
+            if (existing != null)
+            {
+                existing.WrittenReview = writtenReview;
+                existing.Rating = rating;
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return ReviewUpsertStatus.Updated;
             }
 
             var review = new Review(writtenReview, user, rating, songId, songName);
             _context.Reviews.Add(review);
             await _context.SaveChangesAsync();
+            return ReviewUpsertStatus.Added;
         }
 
         public async Task<ReviewDeleteResult> DeleteReviewAsync(string reviewId, string currentUserId)
@@ -82,6 +110,26 @@ namespace Heardit.Services
             await _context.SaveChangesAsync();
 
             return new ReviewDeleteResult(ReviewDeleteStatus.Deleted, songId);
+        }
+
+        public async Task<IReadOnlyDictionary<string, SongReviewStats>> GetSongStatsAsync(IEnumerable<string> songIds)
+        {
+            var ids = songIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new Dictionary<string, SongReviewStats>();
+            }
+
+            var rows = await _context.Reviews
+                .AsNoTracking()
+                .Where(r => ids.Contains(r.SongId))
+                .GroupBy(r => r.SongId)
+                .Select(g => new { SongId = g.Key, Average = g.Average(r => r.Rating), Count = g.Count() })
+                .ToListAsync();
+
+            return rows.ToDictionary(
+                r => r.SongId,
+                r => new SongReviewStats(Math.Round(r.Average, 1), r.Count));
         }
     }
 }

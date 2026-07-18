@@ -20,6 +20,12 @@ namespace Heardit.Models
         [Column(TypeName = "decimal(3, 1)")]
         public decimal Rating { get; set; }
 
+        /// <summary>When the review was first created (UTC). Used to order and sort reviews.</summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>When the review was last edited (UTC), or null if never edited.</summary>
+        public DateTime? UpdatedAt { get; set; }
+
         public Review() { }
 
         public Review(string _writtenReview, HearditUser _user, decimal _rating, string _songId, string _songName)
@@ -30,6 +36,7 @@ namespace Heardit.Models
             Rating = _rating;
             User = _user;
             SongName = _songName;
+            CreatedAt = DateTime.UtcNow;
         }
 
     }
