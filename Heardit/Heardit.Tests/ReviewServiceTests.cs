@@ -10,12 +10,13 @@ namespace Heardit.Tests;
 public class ReviewServiceTests
 {
     [Fact]
-    public async Task AddReviewAsync_UserExists_PersistsReview()
+    public async Task AddOrUpdateReviewAsync_NewReview_PersistsAndReturnsAdded()
     {
         using var db = new SqliteInMemoryDb();
         var user = TestData.MakeUser("alice");
         var userManager = TestData.SubstituteUserManager();
 
+        ReviewUpsertStatus status;
         using (var ctx = db.CreateContext())
         {
             ctx.Users.Add(user);
@@ -23,9 +24,10 @@ public class ReviewServiceTests
             userManager.FindByIdAsync(user.Id).Returns(user);
 
             var service = new ReviewService(ctx, userManager);
-            await service.AddReviewAsync("Loved it", 4.5m, "song1", "Karma Police", user.Id);
+            status = await service.AddOrUpdateReviewAsync("Loved it", 4.5m, "song1", "Karma Police", user.Id);
         }
 
+        Assert.Equal(ReviewUpsertStatus.Added, status);
         using (var verify = db.CreateContext())
         {
             var review = await verify.Reviews.Include(r => r.User).SingleAsync();
@@ -34,22 +36,59 @@ public class ReviewServiceTests
             Assert.Equal("song1", review.SongId);
             Assert.Equal("Karma Police", review.SongName);
             Assert.Equal(user.Id, review.User.Id);
+            Assert.NotEqual(default, review.CreatedAt);
+            Assert.Null(review.UpdatedAt);
         }
     }
 
     [Fact]
-    public async Task AddReviewAsync_UserMissing_PersistsNothing()
+    public async Task AddOrUpdateReviewAsync_ExistingReview_UpdatesInPlace()
+    {
+        using var db = new SqliteInMemoryDb();
+        var user = TestData.MakeUser("alice");
+        var userManager = TestData.SubstituteUserManager();
+        userManager.FindByIdAsync(user.Id).Returns(user);
+
+        using (var ctx = db.CreateContext())
+        {
+            ctx.Users.Add(user);
+            await ctx.SaveChangesAsync();
+            var service = new ReviewService(ctx, userManager);
+            await service.AddOrUpdateReviewAsync("first take", 4.0m, "song1", "Karma Police", user.Id);
+        }
+
+        ReviewUpsertStatus status;
+        using (var ctx = db.CreateContext())
+        {
+            var service = new ReviewService(ctx, userManager);
+            status = await service.AddOrUpdateReviewAsync("changed my mind", 9.0m, "song1", "Karma Police", user.Id);
+        }
+
+        Assert.Equal(ReviewUpsertStatus.Updated, status);
+        using (var verify = db.CreateContext())
+        {
+            var review = await verify.Reviews.SingleAsync();   // still exactly one row
+            Assert.Equal("changed my mind", review.WrittenReview);
+            Assert.Equal(9.0m, review.Rating);
+            Assert.NotNull(review.UpdatedAt);
+        }
+    }
+
+    [Fact]
+    public async Task AddOrUpdateReviewAsync_UserMissing_PersistsNothing()
     {
         using var db = new SqliteInMemoryDb();
         var userManager = TestData.SubstituteUserManager();
         userManager.FindByIdAsync(Arg.Any<string>()).Returns((HearditUser?)null);
 
+        ReviewUpsertStatus status;
         using (var ctx = db.CreateContext())
         {
             var service = new ReviewService(ctx, userManager);
-            await service.AddReviewAsync("orphan", 3.0m, "song1", "Song", "ghost-user");
+            status = await service.AddOrUpdateReviewAsync("orphan", 3.0m, "song1", "Song", "ghost-user");
         }
 
+        Assert.Equal(ReviewUpsertStatus.Failed, status);
         using (var verify = db.CreateContext())
         {
             Assert.Equal(0, await verify.Reviews.CountAsync());
