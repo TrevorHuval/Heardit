@@ -9,20 +9,9 @@
     };
 }
 
-@functions {
-    static string Initials(string? name)
-    {
-        var n = (name ?? "").Trim();
-        if (n.Length == 0) return "?";
-        var parts = n.Split(new[] { ' ', '_', '-', '.' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length >= 2) return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}";
-        return n.Length >= 2 ? n.Substring(0, 2).ToUpper() : n.ToUpper();
-    }
-}
-
 <div class="profile">
     <header class="profile__banner">
-        <div class="avatar avatar--xl avatar--brand" aria-hidden="true">@Initials(Model.User.UserName)</div>
+        <partial name="_Avatar" model="@(new AvatarViewModel(Model.User.UserName, "xl"))" />
         <div class="profile__id">
             <p class="eyebrow">Listener</p>
             <h1 class="profile__name">@Model.User.UserName</h1>
@@ -63,15 +52,21 @@
 
     <section class="profile__section">
         <h2 class="section-title">Reviews</h2>
-        @if (Model.Reviews.Any())
+        @if (Model.Reviews.Count > 0)
         {
             <div class="reviews">
-                @foreach (Review review in Model.Reviews)
+                @foreach (Review review in Model.Reviews.Items)
                 {
                     var reviewModel = new ReviewViewModel() { Review = review };
                     <partial name="_ReviewPartial" model="reviewModel" />
                 }
             </div>
+            <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
+        }
+        else if (Model.Reviews.HasPrevious)
+        {
+            <div class="empty">Nothing further back than this.</div>
+            <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
         }
         else
         {

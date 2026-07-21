@@ -18,9 +18,9 @@ namespace Heardit.Controllers
         }
 
         [EnableRateLimiting("spotify")]
-        public async Task<IActionResult> Index(string songId)
+        public async Task<IActionResult> Index(string songId, int page = 1)
         {
-            var model = await _songService.GetSongPageAsync(songId);
+            var model = await _songService.GetSongPageAsync(songId, User.GetLoggedInUserId<string>(), page);
             if (model == null)
             {
                 return NotFound();
@@ -34,6 +34,13 @@ namespace Heardit.Controllers
         {
             if (!ModelState.IsValid)
             {
+                // Say why, rather than bouncing back to an unchanged page.
+                TempData["FlashError"] = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m))
+                    ?? "That review couldn't be saved. Check the rating and try again.";
+
                 return RedirectToAction(nameof(Index), new { songId = input.SongId });
             }
 

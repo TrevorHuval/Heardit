@@ -118,9 +118,7 @@
     }
 
     // ----- Dismissible flash message -----------------------------------------
-    function initFlash() {
-        var flash = document.querySelector('[data-flash]');
-        if (!flash) return;
+    function initFlash(flash) {
         var close = flash.querySelector('[data-flash-close]');
         if (close) close.addEventListener('click', function () { flash.remove(); });
         window.setTimeout(function () {
@@ -132,5 +130,5 @@
     document.querySelectorAll('.js-rating-meter').forEach(initMeter);
     initEditToggle();
     initSort();
-    initFlash();
+    document.querySelectorAll('[data-flash]').forEach(initFlash);
 })();

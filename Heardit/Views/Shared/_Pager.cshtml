@@ -1,0 +1,28 @@
+@model PagerViewModel
+@using Microsoft.AspNetCore.WebUtilities
+@{
+    // Keep whatever put us on this page (username, songId, tab…) and swap only the page number.
+    var carried = Context.Request.Query
+        .Where(q => !string.Equals(q.Key, "page", StringComparison.OrdinalIgnoreCase))
+        .ToDictionary(q => q.Key, q => (string?)q.Value.ToString());
+
+    string PageUrl(int page)
+    {
+        var values = new Dictionary<string, string?>(carried) { ["page"] = page.ToString() };
+        return QueryHelpers.AddQueryString(Context.Request.Path, values);
+    }
+}
+
+@if (Model.HasPrevious || Model.HasNext)
+{
+    <nav class="pager" aria-label="Pagination">
+        @if (Model.HasPrevious)
+        {
+            <a class="btn btn-ghost btn-sm" href="@PageUrl(Model.Page - 1)" rel="prev">@Model.PreviousLabel</a>
+        }
+        @if (Model.HasNext)
+        {
+            <a class="btn btn-ghost btn-sm" href="@PageUrl(Model.Page + 1)" rel="next">@Model.NextLabel</a>
+        }
+    </nav>
+}

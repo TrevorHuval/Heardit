@@ -6,6 +6,16 @@ namespace Heardit.ViewModels
     {
         public required Song Song { get; set; }
 
-        public required List<Review> Reviews { get; set; }
+        /// <summary>Everyone else's reviews, one page at a time.</summary>
+        public required PagedList<Review> Reviews { get; set; }
+
+        /// <summary>The signed-in user's own review, pulled out of the list so it can head the page.</summary>
+        public Review? MyReview { get; set; }
+
+        /// <summary>Average across every review of this song, not just the current page.</summary>
+        public decimal AverageRating { get; set; }
+
+        /// <summary>Total review count for this song, not just the current page.</summary>
+        public int ReviewCount { get; set; }
     }
 }

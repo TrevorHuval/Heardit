@@ -47,6 +47,18 @@
                 </button>
             </div>
         }
+        @if (TempData["FlashError"] is string flashError)
+        {
+            <div class="flash flash--error" data-flash role="alert">
+                <span class="flash__icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" /></svg>
+                </span>
+                <span class="flash__text">@flashError</span>
+                <button type="button" class="flash__close" data-flash-close aria-label="Dismiss">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                </button>
+            </div>
+        }
         @RenderBody()
     </main>
 

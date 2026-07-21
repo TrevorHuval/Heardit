@@ -22,6 +22,11 @@ namespace Heardit.Controllers
         public async Task<IActionResult> Index()
         {
             var tracks = await _spotify.GetNewReleaseTracksAsync();
+            if (tracks == null)
+            {
+                return View(new HomeIndexViewModel { SpotifyUnavailable = true });
+            }
+
             var feed = tracks.Select(t => new FeedItemViewModel
             {
                 Id = t.Id,
@@ -30,7 +35,7 @@ namespace Heardit.Controllers
             }).ToList();
 
             await FeedStats.ApplyAsync(_reviewService, feed);
-            return View(feed);
+            return View(new HomeIndexViewModel { Feed = feed });
         }
 
         [AllowAnonymous]

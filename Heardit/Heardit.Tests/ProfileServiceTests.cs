@@ -37,7 +37,7 @@ public class ProfileServiceTests
         Assert.NotNull(profile);
         Assert.Equal(2, profile!.FollowersCount);   // bob, carol follow alice
         Assert.Equal(1, profile.FollowingCount);     // alice follows bob
-        Assert.Single(profile.Reviews);
+        Assert.Single(profile.Reviews.Items);
         Assert.True(profile.IsFollowing);            // current user (bob) follows alice
     }
 
@@ -155,7 +155,7 @@ public class ProfileServiceTests
     }
 
     [Fact]
-    public async Task GetFollowsAsync_ReturnsFollowerAndFollowingLists()
+    public async Task GetFollowsAsync_LoadsOnlyTheSelectedTab()
     {
         using var db = new SqliteInMemoryDb();
         var alice = TestData.MakeUser("alice");
@@ -174,13 +174,114 @@ public class ProfileServiceTests
 
         using var ctx = db.CreateContext();
         var service = new ProfileService(ctx, userManager);
-        var vm = await service.GetFollowsAsync("alice", bob.Id);
 
-        Assert.NotNull(vm);
-        Assert.Equal(1, vm!.FollowersCount);
-        Assert.Equal(1, vm.FollowingCount);
-        Assert.Contains(vm.FollowersList, u => u.UserName == "bob");
-        Assert.Contains(vm.FollowingList, u => u.UserName == "carol");
-        Assert.True(vm.IsFollowing);   // current user (bob) follows alice
+        var followers = await service.GetFollowsAsync("alice", bob.Id, showingFollowing: false);
+        Assert.NotNull(followers);
+        Assert.Equal(1, followers!.FollowersCount);
+        Assert.Equal(1, followers.FollowingCount);
+        Assert.False(followers.ShowingFollowing);
+        Assert.Contains(followers.Listeners.Items, u => u.UserName == "bob");
+        Assert.True(followers.IsFollowing);   // current user (bob) follows alice
+
+        var following = await service.GetFollowsAsync("alice", bob.Id, showingFollowing: true);
+        Assert.NotNull(following);
+        Assert.True(following!.ShowingFollowing);
+        Assert.Contains(following.Listeners.Items, u => u.UserName == "carol");
+    }
+
+    [Fact]
+    public async Task GetFollowsAsync_PagesTheList()
+    {
+        using var db = new SqliteInMemoryDb();
+        var alice = TestData.MakeUser("alice");
+        using (var seed = db.CreateContext())
+        {
+            seed.Users.Add(alice);
+            // 21 followers: one more than a page holds.
+            for (var i = 0; i < 21; i++)
+            {
+                var follower = TestData.MakeUser($"fan{i:00}");
+                seed.Users.Add(follower);
+                seed.Follows.Add(new Follows { UserId = alice.Id, FollowerId = follower.Id });
+            }
+
+            await seed.SaveChangesAsync();
+        }
+
+        var userManager = TestData.SubstituteUserManager();
+        userManager.FindByNameAsync("alice").Returns(alice);
+
+        using var ctx = db.CreateContext();
+        var service = new ProfileService(ctx, userManager);
+
+        var first = await service.GetFollowsAsync("alice", null, showingFollowing: false, page: 1);
+        Assert.Equal(20, first!.Listeners.Count);
+        Assert.True(first.Listeners.HasNext);
+
+        var second = await service.GetFollowsAsync("alice", null, showingFollowing: false, page: 2);
+        Assert.Single(second!.Listeners.Items);
+        Assert.False(second.Listeners.HasNext);
+        Assert.True(second.Listeners.HasPrevious);
+    }
+
+    [Fact]
+    public async Task GetProfileAsync_PagesReviewsNewestFirst()
+    {
+        using var db = new SqliteInMemoryDb();
+        var alice = TestData.MakeUser("alice");
+        using (var seed = db.CreateContext())
+        {
+            seed.Users.Add(alice);
+            for (var i = 0; i < 21; i++)
+            {
+                seed.Reviews.Add(new Review($"take {i}", alice, 5m, $"song{i:00}", $"Song {i}")
+                {
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMinutes(i)
+                });
+            }
+
+            await seed.SaveChangesAsync();
+        }
+
+        var userManager = TestData.SubstituteUserManager();
+        userManager.FindByNameAsync("alice").Returns(alice);
+
+        using var ctx = db.CreateContext();
+        var service = new ProfileService(ctx, userManager);
+
+        var first = await service.GetProfileAsync("alice", null, page: 1);
+        Assert.Equal(20, first!.Reviews.Count);
+        Assert.True(first.Reviews.HasNext);
+        Assert.Equal("take 20", first.Reviews.Items[0].WrittenReview);   // newest first
+
+        var second = await service.GetProfileAsync("alice", null, page: 2);
+        Assert.Single(second!.Reviews.Items);
+        Assert.False(second.Reviews.HasNext);
+        Assert.Equal("take 0", second.Reviews.Items[0].WrittenReview);   // oldest last
+    }
+
+    [Fact]
+    public async Task GetProfileAsync_PageBelowOne_FallsBackToTheFirstPage()
+    {
+        using var db = new SqliteInMemoryDb();
+        var alice = TestData.MakeUser("alice");
+        using (var seed = db.CreateContext())
+        {
+            seed.Users.Add(alice);
+            seed.Reviews.Add(new Review("only one", alice, 5m, "song1", "Song One"));
+            await seed.SaveChangesAsync();
+        }
+
+        var userManager = TestData.SubstituteUserManager();
+        userManager.FindByNameAsync("alice").Returns(alice);
+
+        using var ctx = db.CreateContext();
+        var service = new ProfileService(ctx, userManager);
+
+        var profile = await service.GetProfileAsync("alice", null, page: 0);
+
+        Assert.Equal(1, profile!.Reviews.Page);
+        Assert.Single(profile.Reviews.Items);
+        Assert.False(profile.Reviews.HasPrevious);
     }
 }

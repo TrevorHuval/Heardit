@@ -15,6 +15,9 @@ namespace Heardit.Models
 
         public string WrittenReview { get; set; } = null!;
 
+        /// <summary>Author of the review. Required; the row is deleted with the user.</summary>
+        public string UserId { get; set; } = null!;
+
         public HearditUser User { get; set; } = null!;
 
         [Column(TypeName = "decimal(3, 1)")]
@@ -35,6 +38,7 @@ namespace Heardit.Models
             WrittenReview = _writtenReview;
             Rating = _rating;
             User = _user;
+            UserId = _user.Id;
             SongName = _songName;
             CreatedAt = DateTime.UtcNow;
         }

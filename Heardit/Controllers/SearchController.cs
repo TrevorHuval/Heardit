@@ -25,6 +25,11 @@ namespace Heardit.Controllers
             }
 
             var results = await _spotify.SearchTracksAsync(SearchString);
+            if (results == null)
+            {
+                return View(new SearchResultsViewModel { SpotifyUnavailable = true });
+            }
+
             var feed = results.Select(t => new FeedItemViewModel
             {
                 Id = t.Id,
@@ -33,7 +38,7 @@ namespace Heardit.Controllers
             }).ToList();
 
             await FeedStats.ApplyAsync(_reviewService, feed);
-            return View(feed);
+            return View(new SearchResultsViewModel { Tracks = feed });
         }
     }
 }

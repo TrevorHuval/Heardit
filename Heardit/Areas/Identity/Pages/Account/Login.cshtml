@@ -37,8 +37,8 @@
             <button id="login-submit" type="submit" class="btn btn-primary btn-lg btn-block">Log in</button>
         </form>
 
+        @* No password reset: the app sends no email, so the flow would go nowhere (see /Home/Privacy). *@
         <div class="auth__foot">
-            <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
             <span>New here? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></span>
         </div>
     </div>

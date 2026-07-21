@@ -2,17 +2,21 @@
     ViewData["Title"] = "Heardit";
 }
 
-@model IEnumerable<FeedItemViewModel>
+@model HomeIndexViewModel
 
 <div class="feed__head">
     <h1 class="feed__title">New Releases</h1>
     <p class="feed__sub">Fresh drops from Spotify — play a track, then rate it and read the reviews.</p>
 </div>
 
-@if (Model.Any())
+@if (Model.SpotifyUnavailable)
+{
+    <div class="empty">Couldn't reach Spotify just now, so there's nothing to show. Try again in a minute.</div>
+}
+else if (Model.Feed.Count > 0)
 {
     <div class="feed">
-        @foreach (var item in Model)
+        @foreach (var item in Model.Feed)
         {
             <partial name="_FeedCard" model="item" />
         }

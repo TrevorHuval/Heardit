@@ -7,7 +7,7 @@ namespace Heardit.ViewModels
     {
         public required HearditUser User { get; set; }
 
-        public required List<Review> Reviews { get; set; }
+        public required PagedList<Review> Reviews { get; set; }
 
         public bool IsFollowing { get; set; }
 

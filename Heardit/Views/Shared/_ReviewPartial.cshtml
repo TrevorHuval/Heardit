@@ -2,7 +2,7 @@
 
 @using Heardit.Areas.Identity.Data
 @{
-    var IsUsersPost = Model.Review.User.Id.Equals(User.GetLoggedInUserId<string>());
+    var IsUsersPost = Model.Review.UserId.Equals(User.GetLoggedInUserId<string>());
     var createdUtc = DateTime.SpecifyKind(Model.Review.CreatedAt, DateTimeKind.Utc);
     var createdUnix = new DateTimeOffset(createdUtc).ToUnixTimeSeconds();
 }

@@ -189,6 +189,26 @@ a:hover {
     color: var(--text-3);
 }
 
+/* Long-form body copy (the privacy page). */
+.prose {
+    max-width: 62ch;
+    color: var(--text-2);
+    line-height: 1.7;
+}
+
+.prose p {
+    margin: 0 0 var(--space-4);
+}
+
+.prose a {
+    color: var(--brand);
+    font-weight: 600;
+}
+
+.prose a:hover {
+    color: var(--brand-bright);
+}
+
 .empty {
     padding: var(--space-6) var(--space-4);
     text-align: center;
@@ -1349,6 +1369,21 @@ textarea.form-control {
 }
 
 /* ==========================================================================
+   Pager — two links, no page numbers (nothing here counts its rows)
+   ========================================================================== */
+.pager {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+/* With only a "next" link, keep it on the right where the pair would have put it. */
+.pager > :only-child {
+    margin-left: auto;
+}
+
+/* ==========================================================================
    Flash message (post/update/delete confirmation)
    ========================================================================== */
 .flash {
@@ -1371,10 +1406,20 @@ textarea.form-control {
     transform: translateY(-6px);
 }
 
+/* Rejected input — same shape, destructive palette. */
+.flash--error {
+    background: var(--danger-soft);
+    border-color: rgba(240, 97, 109, 0.32);
+}
+
 .flash__icon {
     display: inline-flex;
     color: var(--brand);
     flex: 0 0 auto;
+}
+
+.flash--error .flash__icon {
+    color: var(--danger);
 }
 
 .flash__text {

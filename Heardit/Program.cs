@@ -35,7 +35,9 @@ builder.Services.AddSingleton<ISpotifyClient>(sp =>
 });
 
 // Application services.
-builder.Services.AddMemoryCache();
+// The Spotify cache is bounded so search traffic can't grow it without limit; entries declare a size
+// in SpotifyService (roughly their row count), and the cache evicts once the budget is spent.
+builder.Services.AddMemoryCache(options => options.SizeLimit = 1024);
 builder.Services.AddScoped<ISpotifyService, SpotifyService>();
 builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();

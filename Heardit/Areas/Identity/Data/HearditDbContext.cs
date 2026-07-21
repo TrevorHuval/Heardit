@@ -22,16 +22,29 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
         base.OnModelCreating(builder);
         builder.Entity<Follows>()
                 .HasKey(f => new { f.UserId, f.FollowerId });
+        // Cascade on both sides so deleting an account takes its follow rows with it. Postgres has no
+        // objection to the two cascade paths into Follows; that restriction was SQL Server's.
         builder.Entity<Follows>()
             .HasOne(f => f.User)
             .WithMany(u => u.Followers)
             .HasForeignKey(f => f.UserId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Cascade);
         builder.Entity<Follows>()
             .HasOne(f => f.Follower)
             .WithMany(u => u.Following)
             .HasForeignKey(f => f.FollowerId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // A review always has an author, and dies with them — the views dereference Review.User freely.
+        builder.Entity<Review>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
+        // The song page and the batched feed stats both filter on SongId; every listing orders by CreatedAt.
+        builder.Entity<Review>().HasIndex(r => r.SongId);
+        builder.Entity<Review>().HasIndex(r => r.CreatedAt);
 
         // Customize the ASP.NET Identity model and override the defaults if needed.
         // For example, you can rename the ASP.NET Identity table names and more.

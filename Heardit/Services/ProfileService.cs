@@ -8,9 +8,10 @@ namespace Heardit.Services
 {
     public interface IProfileService
     {
-        Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId);
+        Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId, int page = 1);
 
-        Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId);
+        /// <summary>One page of either the follower or the following list, plus both counts.</summary>
+        Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId, bool showingFollowing, int page = 1);
 
         /// <summary>Follows the target user; returns the target's username, or null if not found.</summary>
         Task<string?> FollowAsync(string targetUserId, string currentUserId);
@@ -30,7 +31,7 @@ namespace Heardit.Services
             _userManager = userManager;
         }
 
-        public async Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId)
+        public async Task<ProfileViewModel?> GetProfileAsync(string username, string? currentUserId, int page = 1)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -46,12 +47,13 @@ namespace Heardit.Services
             return new ProfileViewModel
             {
                 User = user,
-                Reviews = await _context.Reviews
-                    .AsNoTracking()
-                    .Where(r => r.User.UserName == username)
-                    .Include(r => r.User)
-                    .OrderByDescending(r => r.CreatedAt)
-                    .ToListAsync(),
+                Reviews = await PagedList<Review>.CreateAsync(
+                    _context.Reviews
+                        .AsNoTracking()
+                        .Where(r => r.UserId == user.Id)
+                        .Include(r => r.User)
+                        .OrderByDescending(r => r.CreatedAt),
+                    page),
                 IsFollowing = await _context.Follows
                     .AsNoTracking()
                     .AnyAsync(f => f.UserId == user.Id && f.FollowerId == currentUserId),
@@ -64,7 +66,7 @@ namespace Heardit.Services
             };
         }
 
-        public async Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId)
+        public async Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId, bool showingFollowing, int page = 1)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -77,21 +79,16 @@ namespace Heardit.Services
                 return null;
             }
 
+            // Only the visible tab is queried; the other is a link away.
+            var listeners = showingFollowing
+                ? _context.Follows.AsNoTracking().Where(f => f.FollowerId == user.Id).Select(f => f.User)
+                : _context.Follows.AsNoTracking().Where(f => f.UserId == user.Id).Select(f => f.Follower);
+
             return new FollowViewModel
             {
                 User = user,
-                FollowersList = await _context.Follows
-                    .AsNoTracking()
-                    .Where(f => f.UserId == user.Id)
-                    .Include(f => f.Follower)
-                    .Select(f => f.Follower)
-                    .ToListAsync(),
-                FollowingList = await _context.Follows
-                    .AsNoTracking()
-                    .Where(f => f.FollowerId == user.Id)
-                    .Include(f => f.User)
-                    .Select(f => f.User)
-                    .ToListAsync(),
+                ShowingFollowing = showingFollowing,
+                Listeners = await PagedList<HearditUser>.CreateAsync(listeners.OrderBy(u => u.UserName), page),
                 FollowersCount = await _context.Follows
                     .AsNoTracking()
                     .CountAsync(f => f.UserId == user.Id),

@@ -6,14 +6,15 @@ namespace Heardit.Services
 {
     public interface ISpotifyService
     {
-        /// <summary>Lead track of each current New Release album (homepage feed).</summary>
-        Task<IReadOnlyList<SimpleTrack>> GetNewReleaseTracksAsync();
+        /// <summary>Lead track of each current New Release album (homepage feed).
+        /// Null means Spotify could not be reached; an empty list means it had nothing to give.</summary>
+        Task<IReadOnlyList<SimpleTrack>?> GetNewReleaseTracksAsync();
 
         /// <summary>A single track by Spotify id, or null if the id is invalid or not found.</summary>
         Task<FullTrack?> GetTrackAsync(string trackId);
 
-        /// <summary>Track search results, or an empty list on failure.</summary>
-        Task<IReadOnlyList<FullTrack>> SearchTracksAsync(string query);
+        /// <summary>Track search results. Null means Spotify could not be reached; empty means no matches.</summary>
+        Task<IReadOnlyList<FullTrack>?> SearchTracksAsync(string query);
     }
 
     public class SpotifyService : ISpotifyService
@@ -27,6 +28,16 @@ namespace Heardit.Services
         private static readonly TimeSpan TrackTtl = TimeSpan.FromHours(24);
         private static readonly TimeSpan SearchTtl = TimeSpan.FromMinutes(5);
 
+        // The cache is size-bounded (see Program.cs), so every entry declares a size: roughly its row
+        // count, so a list of results costs more of the budget than a single track. Every Set below must
+        // set one — an entry without a size throws once the cache has a SizeLimit.
+        private const long ListEntrySize = 20;
+        private const long TrackEntrySize = 1;
+
+        // Search keys are the user's own text. Cap the length that can become a key so nobody can fill
+        // the cache with long junk queries; anything longer just skips the cache and goes to Spotify.
+        private const int MaxCacheableQueryLength = 100;
+
         private readonly ISpotifyClient _spotify;
         private readonly IMemoryCache _cache;
         private readonly ILogger<SpotifyService> _logger;
@@ -38,7 +49,7 @@ namespace Heardit.Services
             _logger = logger;
         }
 
-        public async Task<IReadOnlyList<SimpleTrack>> GetNewReleaseTracksAsync()
+        public async Task<IReadOnlyList<SimpleTrack>?> GetNewReleaseTracksAsync()
         {
             if (_cache.TryGetValue(NewReleasesCacheKey, out IReadOnlyList<SimpleTrack>? cached) && cached != null)
             {
@@ -81,7 +92,7 @@ namespace Heardit.Services
 
                 if (leadTracks.Count > 0)
                 {
-                    _cache.Set(NewReleasesCacheKey, (IReadOnlyList<SimpleTrack>)leadTracks, NewReleasesTtl);
+                    _cache.Set(NewReleasesCacheKey, (IReadOnlyList<SimpleTrack>)leadTracks, Entry(NewReleasesTtl, ListEntrySize));
                 }
 
                 return leadTracks;
@@ -89,7 +100,7 @@ namespace Heardit.Services
             catch (APIException ex)
             {
                 _logger.LogError(ex, "Failed to load new releases from Spotify.");
-                return Array.Empty<SimpleTrack>();
+                return null;
             }
         }
 
@@ -112,7 +123,7 @@ namespace Heardit.Services
                 var track = await _spotify.Tracks.Get(trackId);
                 if (track != null)
                 {
-                    _cache.Set(cacheKey, track, TrackTtl);
+                    _cache.Set(cacheKey, track, Entry(TrackTtl, TrackEntrySize));
                 }
 
                 return track;
@@ -124,15 +135,18 @@ namespace Heardit.Services
             }
         }
 
-        public async Task<IReadOnlyList<FullTrack>> SearchTracksAsync(string query)
+        public async Task<IReadOnlyList<FullTrack>?> SearchTracksAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
                 return Array.Empty<FullTrack>();
             }
 
-            var cacheKey = $"spotify:search:{query.Trim().ToLowerInvariant()}";
-            if (_cache.TryGetValue(cacheKey, out IReadOnlyList<FullTrack>? cached) && cached != null)
+            var trimmed = query.Trim();
+            var cacheable = trimmed.Length <= MaxCacheableQueryLength;
+            var cacheKey = $"spotify:search:{trimmed.ToLowerInvariant()}";
+
+            if (cacheable && _cache.TryGetValue(cacheKey, out IReadOnlyList<FullTrack>? cached) && cached != null)
             {
                 return cached;
             }
@@ -142,9 +156,9 @@ namespace Heardit.Services
                 _logger.LogInformation("Cache miss: searching the Spotify API for {Query}.", query);
                 var searchRes = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, query));
                 var results = searchRes.Tracks?.Items ?? new List<FullTrack>();
-                if (results.Count > 0)
+                if (cacheable && results.Count > 0)
                 {
-                    _cache.Set(cacheKey, (IReadOnlyList<FullTrack>)results, SearchTtl);
+                    _cache.Set(cacheKey, (IReadOnlyList<FullTrack>)results, Entry(SearchTtl, ListEntrySize));
                 }
 
                 return results;
@@ -152,8 +166,11 @@ namespace Heardit.Services
             catch (APIException ex)
             {
                 _logger.LogWarning(ex, "Spotify search failed for query {Query}.", query);
-                return Array.Empty<FullTrack>();
+                return null;
             }
         }
+
+        private static MemoryCacheEntryOptions Entry(TimeSpan ttl, long size) =>
+            new() { AbsoluteExpirationRelativeToNow = ttl, Size = size };
     }
 }

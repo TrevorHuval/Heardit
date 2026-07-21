@@ -72,7 +72,7 @@ namespace Heardit.Services
 
             // One review per user per song: update in place if it already exists.
             var existing = await _context.Reviews
-                .FirstOrDefaultAsync(r => r.SongId == songId && r.User.Id == userId);
+                .FirstOrDefaultAsync(r => r.SongId == songId && r.UserId == userId);
 
             if (existing != null)
             {
@@ -92,7 +92,6 @@ namespace Heardit.Services
         public async Task<ReviewDeleteResult> DeleteReviewAsync(string reviewId, string currentUserId)
         {
             var review = await _context.Reviews
-                .Include(r => r.User)
                 .FirstOrDefaultAsync(r => r.ReviewId == reviewId);
 
             if (review == null)
@@ -100,7 +99,7 @@ namespace Heardit.Services
                 return new ReviewDeleteResult(ReviewDeleteStatus.NotFound, null);
             }
 
-            if (review.User?.Id != currentUserId)
+            if (review.UserId != currentUserId)
             {
                 return new ReviewDeleteResult(ReviewDeleteStatus.Forbidden, review.SongId);
             }

@@ -7,23 +7,11 @@
     {
         { "username", Model.User.UserName ?? string.Empty }
     };
-    var followingActive = string.Equals(Context.Request.Query["tab"], "following", StringComparison.OrdinalIgnoreCase);
-}
-
-@functions {
-    static string Initials(string? name)
-    {
-        var n = (name ?? "").Trim();
-        if (n.Length == 0) return "?";
-        var parts = n.Split(new[] { ' ', '_', '-', '.' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length >= 2) return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}";
-        return n.Length >= 2 ? n.Substring(0, 2).ToUpper() : n.ToUpper();
-    }
 }
 
 <div class="follows">
     <header class="profile__banner">
-        <div class="avatar avatar--xl avatar--brand" aria-hidden="true">@Initials(Model.User.UserName)</div>
+        <partial name="_Avatar" model="@(new AvatarViewModel(Model.User.UserName, "xl"))" />
         <div class="profile__id">
             <p class="eyebrow">Listener</p>
             <h1 class="profile__name">@Model.User.UserName</h1>
@@ -63,49 +51,33 @@
     </header>
 
     <section class="profile__section">
-        <div class="tabs nav" role="tablist">
-            <button class="tab @(followingActive ? "" : "active")" data-bs-toggle="tab" data-bs-target="#Followers" id="Followers-tab" type="button" role="tab" aria-controls="Followers" aria-selected="@(followingActive ? "false" : "true")">Followers</button>
-            <button class="tab @(followingActive ? "active" : "")" data-bs-toggle="tab" data-bs-target="#Following" id="Following-tab" type="button" role="tab" aria-controls="Following" aria-selected="@(followingActive ? "true" : "false")">Following</button>
-        </div>
-        <div class="tab-content">
-            <div class="tab-pane fade @(followingActive ? "" : "show active")" id="Followers" role="tabpanel" aria-labelledby="Followers-tab">
-                @if (Model.FollowersList.Count != 0)
+        @* Server-side tabs: each list is paged on its own, so only the selected one is loaded. *@
+        <nav class="tabs" aria-label="Follows">
+            <a class="tab @(Model.ShowingFollowing ? "" : "active")" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="followers">Followers</a>
+            <a class="tab @(Model.ShowingFollowing ? "active" : "")" asp-action="Index" asp-controller="Follow" asp-all-route-data="followsListRoute" asp-route-tab="following">Following</a>
+        </nav>
+
+        @if (Model.Listeners.Count > 0)
+        {
+            <div class="user-list">
+                @foreach (HearditUser user in Model.Listeners.Items)
                 {
-                    <div class="user-list">
-                        @foreach (HearditUser user in Model.FollowersList)
-                        {
-                            <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
-                                <span class="avatar avatar--sm avatar--brand" aria-hidden="true">@Initials(user.UserName)</span>
-                                <span class="user-row__name">@user.UserName</span>
-                                <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                            </a>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="empty">This listener isn't followed by anyone yet.</div>
+                    <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
+                        <partial name="_Avatar" model="@(new AvatarViewModel(user.UserName))" />
+                        <span class="user-row__name">@user.UserName</span>
+                        <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </a>
                 }
             </div>
-            <div class="tab-pane fade @(followingActive ? "show active" : "")" id="Following" role="tabpanel" aria-labelledby="Following-tab">
-                @if (Model.FollowingList.Count != 0)
-                {
-                    <div class="user-list">
-                        @foreach (HearditUser user in Model.FollowingList)
-                        {
-                            <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
-                                <span class="avatar avatar--sm avatar--brand" aria-hidden="true">@Initials(user.UserName)</span>
-                                <span class="user-row__name">@user.UserName</span>
-                                <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                            </a>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="empty">This listener isn't following anyone yet.</div>
-                }
-            </div>
-        </div>
+            <partial name="_Pager" model="@(new PagerViewModel { Page = Model.Listeners.Page, HasNext = Model.Listeners.HasNext, PreviousLabel = "Previous", NextLabel = "Next" })" />
+        }
+        else if (Model.ShowingFollowing)
+        {
+            <div class="empty">This listener isn't following anyone yet.</div>
+        }
+        else
+        {
+            <div class="empty">This listener isn't followed by anyone yet.</div>
+        }
     </section>
 </div>

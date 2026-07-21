@@ -13,9 +13,10 @@ namespace Heardit.Controllers
             _profileService = profileService;
         }
 
-        public async Task<IActionResult> Index(string username)
+        public async Task<IActionResult> Index(string username, string? tab, int page = 1)
         {
-            var model = await _profileService.GetFollowsAsync(username, User.GetLoggedInUserId<string>());
+            var showingFollowing = string.Equals(tab, "following", StringComparison.OrdinalIgnoreCase);
+            var model = await _profileService.GetFollowsAsync(username, User.GetLoggedInUserId<string>(), showingFollowing, page);
             if (model == null)
             {
                 return NotFound();

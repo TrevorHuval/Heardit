@@ -1,4 +1,4 @@
-@model IEnumerable<FeedItemViewModel>
+@model SearchResultsViewModel
 @{
     ViewData["Title"] = "Search";
     var query = Context.Request.Query["SearchString"].ToString();
@@ -12,10 +12,14 @@
     }
 </div>
 
-@if (Model.Any())
+@if (Model.SpotifyUnavailable)
+{
+    <div class="empty">Couldn't reach Spotify to run that search. Try again in a minute.</div>
+}
+else if (Model.Tracks.Count > 0)
 {
     <div class="feed">
-        @foreach (var item in Model)
+        @foreach (var item in Model.Tracks)
         {
             <partial name="_FeedCard" model="item" />
         }

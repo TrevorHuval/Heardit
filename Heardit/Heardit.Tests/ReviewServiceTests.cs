@@ -208,4 +208,70 @@ public class ReviewServiceTests
 
         Assert.Null(await service.GetReviewAsync("   "));
     }
+
+    [Fact]
+    public async Task GetSongStatsAsync_NoIds_ReturnsEmptyWithoutQuerying()
+    {
+        using var db = new SqliteInMemoryDb();
+        var userManager = TestData.SubstituteUserManager();
+        using var ctx = db.CreateContext();
+        var service = new ReviewService(ctx, userManager);
+
+        Assert.Empty(await service.GetSongStatsAsync(Array.Empty<string>()));
+    }
+
+    [Fact]
+    public async Task GetSongStatsAsync_AveragesPerSongAndRoundsToOneDecimal()
+    {
+        using var db = new SqliteInMemoryDb();
+        var alice = TestData.MakeUser("alice");
+        var bob = TestData.MakeUser("bob");
+        var carol = TestData.MakeUser("carol");
+        using (var seed = db.CreateContext())
+        {
+            seed.Users.AddRange(alice, bob, carol);
+            // song1 averages 4.6666… → 4.7; song2 has a single review.
+            seed.Reviews.Add(new Review("a", alice, 4.0m, "song1", "Song One"));
+            seed.Reviews.Add(new Review("b", bob, 5.0m, "song1", "Song One"));
+            seed.Reviews.Add(new Review("c", carol, 5.0m, "song1", "Song One"));
+            seed.Reviews.Add(new Review("d", alice, 2.5m, "song2", "Song Two"));
+            await seed.SaveChangesAsync();
+        }
+
+        var userManager = TestData.SubstituteUserManager();
+        using var ctx = db.CreateContext();
+        var service = new ReviewService(ctx, userManager);
+
+        var stats = await service.GetSongStatsAsync(new[] { "song1", "song2" });
+
+        Assert.Equal(2, stats.Count);
+        Assert.Equal(4.7m, stats["song1"].Average);
+        Assert.Equal(3, stats["song1"].Count);
+        Assert.Equal(2.5m, stats["song2"].Average);
+        Assert.Equal(1, stats["song2"].Count);
+    }
+
+    [Fact]
+    public async Task GetSongStatsAsync_UnknownAndBlankIds_AreSimplyAbsent()
+    {
+        using var db = new SqliteInMemoryDb();
+        var alice = TestData.MakeUser("alice");
+        using (var seed = db.CreateContext())
+        {
+            seed.Users.Add(alice);
+            seed.Reviews.Add(new Review("a", alice, 4.0m, "song1", "Song One"));
+            await seed.SaveChangesAsync();
+        }
+
+        var userManager = TestData.SubstituteUserManager();
+        using var ctx = db.CreateContext();
+        var service = new ReviewService(ctx, userManager);
+
+        // Duplicates and blanks are filtered out; an unreviewed id yields no entry rather than a zero.
+        var stats = await service.GetSongStatsAsync(new[] { "song1", "song1", "never-reviewed", "" });
+
+        Assert.Single(stats);
+        Assert.True(stats.ContainsKey("song1"));
+        Assert.False(stats.ContainsKey("never-reviewed"));
+    }
 }

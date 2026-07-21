@@ -1,13 +1,11 @@
 @model SongViewModel
-@using Heardit.Areas.Identity.Data;
 @using Heardit.Models;
 @{
     ViewData["Title"] = "Song";
-    var userId = User.GetLoggedInUserId<string>();
-    var myReview = Model.Reviews.FirstOrDefault(r => r.User.Id == userId);
-    var others = Model.Reviews.Where(r => r.User.Id != userId).ToList();
-    var reviewCount = Model.Reviews.Count;
-    var avgRating = reviewCount > 0 ? Math.Round(Model.Reviews.Select(r => r.Rating).Average(), 1) : 0;
+    var myReview = Model.MyReview;
+    var others = Model.Reviews;
+    var reviewCount = Model.ReviewCount;
+    var avgRating = Model.AverageRating;
     var editing = myReview != null; // composer starts collapsed when a review already exists
 }
 
@@ -82,6 +80,7 @@
                 <h2 class="section-title">Reviews</h2>
                 @if (others.Count > 1)
                 {
+                    @* Sorts the reviews on this page; older pages keep their own order. *@
                     <div class="sort" data-sort-group role="group" aria-label="Sort reviews">
                         <button class="sort__btn active" type="button" data-sort="new" aria-pressed="true">Newest</button>
                         <button class="sort__btn" type="button" data-sort="high" aria-pressed="false">Highest</button>
@@ -91,11 +90,17 @@
             @if (others.Count > 0)
             {
                 <div class="reviews" id="reviewList">
-                    @foreach (Review review in others)
+                    @foreach (Review review in others.Items)
                     {
                         <partial name="_ReviewPartial" model="@(new ReviewViewModel { Review = review })" />
                     }
                 </div>
+                <partial name="_Pager" model="@PagerViewModel.For(others)" />
+            }
+            else if (others.HasPrevious)
+            {
+                <div class="empty">Nothing further back than this.</div>
+                <partial name="_Pager" model="@PagerViewModel.For(others)" />
             }
             else
             {

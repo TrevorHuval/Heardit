@@ -13,9 +13,9 @@ namespace Heardit.Controllers
             _profileService = profileService;
         }
 
-        public async Task<IActionResult> Index(string username)
+        public async Task<IActionResult> Index(string username, int page = 1)
         {
-            var model = await _profileService.GetProfileAsync(username, User.GetLoggedInUserId<string>());
+            var model = await _profileService.GetProfileAsync(username, User.GetLoggedInUserId<string>(), page);
             if (model == null)
             {
                 return NotFound();
