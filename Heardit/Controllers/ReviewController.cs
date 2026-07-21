@@ -22,7 +22,26 @@ namespace Heardit.Controllers
                 return NotFound();
             }
 
-            return View("Review", new ReviewViewModel { Review = review });
+            var likeStats = await _reviewService.GetLikeStatsAsync(
+                new[] { review.ReviewId }, User.GetLoggedInUserId<string>());
+
+            return View("Review", ReviewViewModel.For(review, likeStats));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ToggleLike(string reviewId, string? returnUrl)
+        {
+            var liked = await _reviewService.ToggleLikeAsync(reviewId, User.GetLoggedInUserId<string>());
+            if (liked == null)
+            {
+                return NotFound();
+            }
+
+            // The form carries wherever the review was rendered, so the reader lands back on the same
+            // list at the same page. Anything that isn't ours goes home instead.
+            return Url.IsLocalUrl(returnUrl)
+                ? Redirect(returnUrl!)
+                : RedirectToAction(nameof(Index), "Home");
         }
 
         [HttpPost]

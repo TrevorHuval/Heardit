@@ -13,6 +13,9 @@ namespace Heardit.Services
         /// <summary>One page of either the follower or the following list, plus both counts.</summary>
         Task<FollowViewModel?> GetFollowsAsync(string username, string? currentUserId, bool showingFollowing, int page = 1);
 
+        /// <summary>Whether this user follows anyone at all — decides which home tab opens by default.</summary>
+        Task<bool> IsFollowingAnyoneAsync(string userId);
+
         /// <summary>Follows the target user; returns the target's username, or null if not found.</summary>
         Task<string?> FollowAsync(string targetUserId, string currentUserId);
 
@@ -99,6 +102,16 @@ namespace Heardit.Services
                     .AsNoTracking()
                     .AnyAsync(f => f.UserId == user.Id && f.FollowerId == currentUserId)
             };
+        }
+
+        public async Task<bool> IsFollowingAnyoneAsync(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return false;
+            }
+
+            return await _context.Follows.AsNoTracking().AnyAsync(f => f.FollowerId == userId);
         }
 
         public async Task<string?> FollowAsync(string targetUserId, string currentUserId)

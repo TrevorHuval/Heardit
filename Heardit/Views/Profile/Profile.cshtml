@@ -57,8 +57,7 @@
             <div class="reviews">
                 @foreach (Review review in Model.Reviews.Items)
                 {
-                    var reviewModel = new ReviewViewModel() { Review = review };
-                    <partial name="_ReviewPartial" model="reviewModel" />
+                    <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
                 }
             </div>
             <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />

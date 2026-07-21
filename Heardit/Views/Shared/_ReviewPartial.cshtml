@@ -5,6 +5,9 @@
     var IsUsersPost = Model.Review.UserId.Equals(User.GetLoggedInUserId<string>());
     var createdUtc = DateTime.SpecifyKind(Model.Review.CreatedAt, DateTimeKind.Utc);
     var createdUnix = new DateTimeOffset(createdUtc).ToUnixTimeSeconds();
+    // Liking is a form POST, so the page reloads; come back to this list, this page, this review.
+    var anchor = $"review-{Model.Review.ReviewId}";
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}#{anchor}";
 }
 
 @functions {
@@ -21,7 +24,7 @@
     }
 }
 
-<article class="review" data-rating="@Model.Review.Rating" data-created="@createdUnix">
+<article class="review" id="@anchor" data-rating="@Model.Review.Rating" data-created="@createdUnix">
     <div class="review__head">
         <div class="score score--chip" title="Rated @Model.Review.Rating out of 10">
             <span class="score__value">@Model.Review.Rating</span><span class="score__scale">/10</span>
@@ -50,4 +53,18 @@
     {
         <p class="review__body">@Model.Review.WrittenReview</p>
     }
+    <div class="review__foot">
+        <form asp-action="ToggleLike" asp-controller="Review" method="post">
+            <input type="hidden" name="reviewId" value="@Model.Review.ReviewId" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="like @(Model.LikedByMe ? "is-liked" : "")" aria-pressed="@(Model.LikedByMe ? "true" : "false")"
+                    title="@(Model.LikedByMe ? "Unlike this review" : "Like this review")">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="@(Model.LikedByMe ? "currentColor" : "none")" aria-hidden="true" focusable="false">
+                    <path d="M12 20.5 4.2 13a4.8 4.8 0 0 1 6.8-6.8l1 1 1-1A4.8 4.8 0 0 1 19.8 13z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                </svg>
+                <span class="like__count tnum">@Model.LikeCount</span>
+                <span class="visually-hidden">@(Model.LikeCount == 1 ? "like" : "likes")</span>
+            </button>
+        </form>
+    </div>
 </article>

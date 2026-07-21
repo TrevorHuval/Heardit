@@ -940,6 +940,48 @@ a:hover {
     flex: 0 0 auto;
 }
 
+.review__foot {
+    display: flex;
+    margin-top: var(--space-3);
+}
+
+/* Like — quiet until it's yours, then it wears the brand colour. */
+.like {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    margin-left: calc(var(--space-2) * -1);
+    appearance: none;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--dur-1) var(--ease), background-color var(--dur-1) var(--ease);
+}
+
+.like:hover {
+    background: var(--surface-3);
+    color: var(--text-1);
+}
+
+.like:focus-visible {
+    outline: 2px solid var(--brand-ring);
+    outline-offset: 2px;
+}
+
+.like.is-liked {
+    color: var(--brand);
+}
+
+.like.is-liked:hover {
+    color: var(--brand-bright);
+}
+
 /* ==========================================================================
    Profile / Follow
    ========================================================================== */

@@ -1,5 +1,6 @@
 using Heardit.Areas.Identity.Data;
 using Heardit.Models;
+using Heardit.Services;
 
 namespace Heardit.ViewModels
 {
@@ -8,6 +9,10 @@ namespace Heardit.ViewModels
         public required HearditUser User { get; set; }
 
         public required PagedList<Review> Reviews { get; set; }
+
+        /// <summary>Like counts for the reviews on this page, batched by the controller.</summary>
+        public IReadOnlyDictionary<string, ReviewLikeStats> LikeStats { get; set; } =
+            new Dictionary<string, ReviewLikeStats>();
 
         public bool IsFollowing { get; set; }
 

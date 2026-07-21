@@ -7,19 +7,25 @@ namespace Heardit.Controllers
     public class ProfileController : Controller
     {
         private readonly IProfileService _profileService;
+        private readonly IReviewService _reviewService;
 
-        public ProfileController(IProfileService profileService)
+        public ProfileController(IProfileService profileService, IReviewService reviewService)
         {
             _profileService = profileService;
+            _reviewService = reviewService;
         }
 
         public async Task<IActionResult> Index(string username, int page = 1)
         {
-            var model = await _profileService.GetProfileAsync(username, User.GetLoggedInUserId<string>(), page);
+            var currentUserId = User.GetLoggedInUserId<string>();
+            var model = await _profileService.GetProfileAsync(username, currentUserId, page);
             if (model == null)
             {
                 return NotFound();
             }
+
+            model.LikeStats = await _reviewService.GetLikeStatsAsync(
+                model.Reviews.Items.Select(r => r.ReviewId), currentUserId);
 
             return View("Profile", model);
         }

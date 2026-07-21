@@ -92,7 +92,7 @@
                 <div class="reviews" id="reviewList">
                     @foreach (Review review in others.Items)
                     {
-                        <partial name="_ReviewPartial" model="@(new ReviewViewModel { Review = review })" />
+                        <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
                     }
                 </div>
                 <partial name="_Pager" model="@PagerViewModel.For(others)" />

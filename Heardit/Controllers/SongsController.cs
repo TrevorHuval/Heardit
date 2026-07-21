@@ -20,11 +20,15 @@ namespace Heardit.Controllers
         [EnableRateLimiting("spotify")]
         public async Task<IActionResult> Index(string songId, int page = 1)
         {
-            var model = await _songService.GetSongPageAsync(songId, User.GetLoggedInUserId<string>(), page);
+            var currentUserId = User.GetLoggedInUserId<string>();
+            var model = await _songService.GetSongPageAsync(songId, currentUserId, page);
             if (model == null)
             {
                 return NotFound();
             }
+
+            model.LikeStats = await _reviewService.GetLikeStatsAsync(
+                model.Reviews.Items.Select(r => r.ReviewId), currentUserId);
 
             return View("Song", model);
         }

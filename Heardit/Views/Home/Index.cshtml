@@ -5,11 +5,47 @@
 @model HomeIndexViewModel
 
 <div class="feed__head">
-    <h1 class="feed__title">New Releases</h1>
-    <p class="feed__sub">Fresh drops from Spotify — play a track, then rate it and read the reviews.</p>
+    <h1 class="feed__title">@(Model.ShowingFollowing ? "Following" : "New Releases")</h1>
+    <p class="feed__sub">
+        @(Model.ShowingFollowing
+            ? "The latest reviews from the listeners you follow."
+            : "Fresh drops from Spotify — play a track, then rate it and read the reviews.")
+    </p>
 </div>
 
-@if (Model.SpotifyUnavailable)
+@* Server-side tabs: only the open tab's data is loaded, and the pager carries ?tab= along with it. *@
+<nav class="tabs" aria-label="Feed">
+    <a class="tab @(Model.ShowingFollowing ? "" : "active")" asp-action="Index" asp-controller="Home" asp-route-tab="new">New Releases</a>
+    <a class="tab @(Model.ShowingFollowing ? "active" : "")" asp-action="Index" asp-controller="Home" asp-route-tab="following">Following</a>
+</nav>
+
+@if (Model.ShowingFollowing)
+{
+    if (Model.Reviews.Count > 0)
+    {
+        <div class="reviews">
+            @foreach (Review review in Model.Reviews.Items)
+            {
+                <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
+            }
+        </div>
+        <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
+    }
+    else if (Model.Reviews.HasPrevious)
+    {
+        <div class="empty">Nothing further back than this.</div>
+        <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
+    }
+    else if (!Model.FollowsAnyone)
+    {
+        <div class="empty">You're not following anyone yet — search for a track and see who's reviewing it.</div>
+    }
+    else
+    {
+        <div class="empty">Nothing from people you follow yet.</div>
+    }
+}
+else if (Model.SpotifyUnavailable)
 {
     <div class="empty">Couldn't reach Spotify just now, so there's nothing to show. Try again in a minute.</div>
 }

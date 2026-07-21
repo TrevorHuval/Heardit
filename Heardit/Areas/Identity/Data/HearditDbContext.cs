@@ -14,6 +14,7 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
 
     public DbSet<Follows> Follows { get; set; }
     public DbSet<Review> Reviews { get; set; }
+    public DbSet<ReviewLike> ReviewLikes { get; set; } = default!;
     public DbSet<Song> Songs { get; set; } = default!;
 
 
@@ -45,6 +46,21 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
         // The song page and the batched feed stats both filter on SongId; every listing orders by CreatedAt.
         builder.Entity<Review>().HasIndex(r => r.SongId);
         builder.Entity<Review>().HasIndex(r => r.CreatedAt);
+
+        // A like belongs to one review by one user; the pair is the key, so the database refuses a
+        // double like on its own. It outlives neither the review nor the account that made it.
+        builder.Entity<ReviewLike>()
+            .HasKey(l => new { l.ReviewId, l.UserId });
+        builder.Entity<ReviewLike>()
+            .HasOne(l => l.Review)
+            .WithMany()
+            .HasForeignKey(l => l.ReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<ReviewLike>()
+            .HasOne(l => l.User)
+            .WithMany()
+            .HasForeignKey(l => l.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         // Customize the ASP.NET Identity model and override the defaults if needed.
         // For example, you can rename the ASP.NET Identity table names and more.
