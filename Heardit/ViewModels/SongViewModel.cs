@@ -22,5 +22,14 @@ namespace Heardit.ViewModels
 
         /// <summary>Total review count for this song, not just the current page.</summary>
         public int ReviewCount { get; set; }
+
+        /// <summary>Whether this track is in the reader's listen-later queue.</summary>
+        public bool Saved { get; set; }
+
+        /// <summary>Whether this track is already one of the reader's pinned favorites.</summary>
+        public bool IsFavorite { get; set; }
+
+        /// <summary>Whether the reader has a free favorites slot left.</summary>
+        public bool HasFavoriteSlot { get; set; }
     }
 }

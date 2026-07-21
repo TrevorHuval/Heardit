@@ -13,12 +13,18 @@ namespace Heardit.Controllers
         private readonly ISpotifyService _spotify;
         private readonly IReviewService _reviewService;
         private readonly IProfileService _profileService;
+        private readonly IListenLaterService _listenLater;
 
-        public HomeController(ISpotifyService spotify, IReviewService reviewService, IProfileService profileService)
+        public HomeController(
+            ISpotifyService spotify,
+            IReviewService reviewService,
+            IProfileService profileService,
+            IListenLaterService listenLater)
         {
             _spotify = spotify;
             _reviewService = reviewService;
             _profileService = profileService;
+            _listenLater = listenLater;
         }
 
         // One action serves both tabs. The Following tab never touches Spotify, so it just inherits the
@@ -64,6 +70,7 @@ namespace Heardit.Controllers
             }).ToList();
 
             await FeedStats.ApplyAsync(_reviewService, feed);
+            await SavedState.ApplyAsync(_listenLater, feed, userId);
             model.Feed = feed;
             return View(model);
         }

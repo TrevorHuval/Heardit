@@ -1,26 +1,42 @@
 @model FeedItemViewModel
+@{
+    // Saving is a form POST, so the page reloads; come back to this feed, this page, this card.
+    var anchor = $"track-{Model.Id}";
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}#{anchor}";
+}
 
-<article class="track">
+<article class="track" id="@anchor">
     <div class="track__player">
         <iframe src="https://open.spotify.com/embed/track/@Model.Id?utm_source=generator&theme=0" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="@Model.Name by @Model.Artists"></iframe>
     </div>
-    <a class="track__reviews" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Id" aria-label="See reviews for @Model.Name">
-        @if (Model.ReviewCount > 0)
-        {
-            <span class="track__stat">
-                <span class="score score--mini" title="Average @Model.AverageRating out of 10"><span class="score__value">@Model.AverageRating</span><span class="score__scale">/10</span></span>
-                <span class="count">@Model.ReviewCount @(Model.ReviewCount == 1 ? "review" : "reviews")</span>
+    <div class="track__foot">
+        <form asp-action="Toggle" asp-controller="ListenLater" method="post">
+            <input type="hidden" name="songId" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="save @(Model.Saved ? "is-saved" : "")" aria-pressed="@(Model.Saved ? "true" : "false")"
+                    title="@(Model.Saved ? $"Remove {Model.Name} from your queue" : $"Save {Model.Name} for later")">
+                <partial name="_SaveIcon" model="Model.Saved" />
+                <span>@(Model.Saved ? "Saved" : "Save")</span>
+            </button>
+        </form>
+        <a class="track__reviews" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Id" aria-label="See reviews for @Model.Name">
+            @if (Model.ReviewCount > 0)
+            {
+                <span class="track__stat">
+                    <span class="score score--mini" title="Average @Model.AverageRating out of 10"><span class="score__value">@Model.AverageRating</span><span class="score__scale">/10</span></span>
+                    <span class="count">@Model.ReviewCount @(Model.ReviewCount == 1 ? "review" : "reviews")</span>
+                </span>
+            }
+            else
+            {
+                <span class="track__prompt">Be the first to review</span>
+            }
+            <span class="track__cta">
+                Reviews
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </span>
-        }
-        else
-        {
-            <span class="track__prompt">Be the first to review</span>
-        }
-        <span class="track__cta">
-            Reviews
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-        </span>
-    </a>
+        </a>
+    </div>
 </article>

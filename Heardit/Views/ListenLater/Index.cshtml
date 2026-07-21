@@ -1,0 +1,29 @@
+@model PagedList<FeedItemViewModel>
+@{
+    ViewData["Title"] = "Queue";
+}
+
+<div class="feed__head">
+    <h1 class="feed__title">Queue</h1>
+    <p class="feed__sub">Tracks you saved for later. Play one, then rate it — saving is a one-tap undo away.</p>
+</div>
+
+@if (Model.Count > 0)
+{
+    <div class="feed">
+        @foreach (var item in Model.Items)
+        {
+            <partial name="_FeedCard" model="item" />
+        }
+    </div>
+    <partial name="_Pager" model="@PagerViewModel.For(Model)" />
+}
+else if (Model.HasPrevious)
+{
+    <div class="empty">Nothing further back than this.</div>
+    <partial name="_Pager" model="@PagerViewModel.For(Model)" />
+}
+else
+{
+    <div class="empty">Your queue is empty — hit Save on any track and it lands here.</div>
+}

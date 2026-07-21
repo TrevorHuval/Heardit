@@ -30,6 +30,11 @@
                 <input id="searchInput" type="text" class="search__input" name="SearchString" placeholder="Search tracks…" aria-label="Search tracks" autocomplete="off" required />
             </form>
 
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="btn btn-ghost btn-sm nav-queue" asp-area="" asp-controller="ListenLater" asp-action="Index">Queue</a>
+            }
+
             <partial name="_LoginPartial" />
         </nav>
     </header>

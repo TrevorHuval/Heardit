@@ -13,5 +13,8 @@ namespace Heardit.ViewModels
         public decimal? AverageRating { get; set; }
 
         public int ReviewCount { get; set; }
+
+        /// <summary>Whether this track is already in the reader's listen-later queue.</summary>
+        public bool Saved { get; set; }
     }
 }

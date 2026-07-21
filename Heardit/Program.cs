@@ -42,6 +42,7 @@ builder.Services.AddScoped<ISpotifyService, SpotifyService>();
 builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<IListenLaterService, ListenLaterService>();
 
 // Require an authenticated user by default; opt out with [AllowAnonymous].
 builder.Services.AddAuthorization(options =>

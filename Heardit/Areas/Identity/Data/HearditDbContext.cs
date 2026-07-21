@@ -16,6 +16,8 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
     public DbSet<Review> Reviews { get; set; }
     public DbSet<ReviewLike> ReviewLikes { get; set; } = default!;
     public DbSet<Song> Songs { get; set; } = default!;
+    public DbSet<ListenLater> ListenLater { get; set; } = default!;
+    public DbSet<FavoriteTrack> FavoriteTracks { get; set; } = default!;
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -61,6 +63,40 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
             .WithMany()
             .HasForeignKey(l => l.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // A saved track: one row per listener per song, so the save button is its own idempotency guard.
+        builder.Entity<ListenLater>()
+            .HasKey(l => new { l.UserId, l.SongId });
+        builder.Entity<ListenLater>()
+            .HasOne(l => l.User)
+            .WithMany()
+            .HasForeignKey(l => l.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<ListenLater>()
+            .HasOne(l => l.Song)
+            .WithMany()
+            .HasForeignKey(l => l.SongId)
+            .OnDelete(DeleteBehavior.Cascade);
+        // The queue is only ever read newest-first for one user at a time.
+        builder.Entity<ListenLater>().HasIndex(l => new { l.UserId, l.CreatedAt });
+
+        // Four pinned tracks per profile. The unique (user, position) pair is what stops two favorites
+        // landing in the same slot when a double-submitted form races itself.
+        builder.Entity<FavoriteTrack>()
+            .HasKey(f => new { f.UserId, f.SongId });
+        builder.Entity<FavoriteTrack>()
+            .HasOne(f => f.User)
+            .WithMany()
+            .HasForeignKey(f => f.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<FavoriteTrack>()
+            .HasOne(f => f.Song)
+            .WithMany()
+            .HasForeignKey(f => f.SongId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<FavoriteTrack>()
+            .HasIndex(f => new { f.UserId, f.Position })
+            .IsUnique();
 
         // Customize the ASP.NET Identity model and override the defaults if needed.
         // For example, you can rename the ASP.NET Identity table names and more.

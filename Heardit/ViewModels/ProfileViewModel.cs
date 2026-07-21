@@ -14,6 +14,9 @@ namespace Heardit.ViewModels
         public IReadOnlyDictionary<string, ReviewLikeStats> LikeStats { get; set; } =
             new Dictionary<string, ReviewLikeStats>();
 
+        /// <summary>Up to four pinned tracks, in slot order.</summary>
+        public IReadOnlyList<FavoriteTrack> Favorites { get; set; } = Array.Empty<FavoriteTrack>();
+
         public bool IsFollowing { get; set; }
 
         public int FollowersCount { get; set; }

@@ -10,11 +10,19 @@ namespace Heardit.Controllers
     {
         private readonly ISongService _songService;
         private readonly IReviewService _reviewService;
+        private readonly IListenLaterService _listenLater;
+        private readonly IProfileService _profileService;
 
-        public SongsController(ISongService songService, IReviewService reviewService)
+        public SongsController(
+            ISongService songService,
+            IReviewService reviewService,
+            IListenLaterService listenLater,
+            IProfileService profileService)
         {
             _songService = songService;
             _reviewService = reviewService;
+            _listenLater = listenLater;
+            _profileService = profileService;
         }
 
         [EnableRateLimiting("spotify")]
@@ -29,6 +37,13 @@ namespace Heardit.Controllers
 
             model.LikeStats = await _reviewService.GetLikeStatsAsync(
                 model.Reviews.Items.Select(r => r.ReviewId), currentUserId);
+
+            var saved = await _listenLater.GetSavedSongIdsAsync(currentUserId, new[] { model.Song.Id });
+            model.Saved = saved.Contains(model.Song.Id);
+
+            var favorite = await _profileService.GetFavoriteStateAsync(currentUserId, model.Song.Id);
+            model.IsFavorite = favorite.IsFavorite;
+            model.HasFavoriteSlot = favorite.HasSlot;
 
             return View("Song", model);
         }

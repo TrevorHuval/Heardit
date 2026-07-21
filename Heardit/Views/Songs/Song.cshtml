@@ -7,11 +7,49 @@
     var reviewCount = Model.ReviewCount;
     var avgRating = Model.AverageRating;
     var editing = myReview != null; // composer starts collapsed when a review already exists
+    // Both toggles post and come back here, so they carry the page they were pressed on.
+    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
 }
 
 <div class="song">
     <div class="song__player">
         <iframe src="https://open.spotify.com/embed/track/@Model.Song.Id?utm_source=generator&theme=0" width="100%" height="352" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="Spotify player"></iframe>
+    </div>
+
+    <div class="song__actions">
+        <form asp-action="Toggle" asp-controller="ListenLater" method="post">
+            <input type="hidden" name="songId" value="@Model.Song.Id" />
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+            <button type="submit" class="save @(Model.Saved ? "is-saved" : "")" aria-pressed="@(Model.Saved ? "true" : "false")"
+                    title="@(Model.Saved ? "Remove this track from your queue" : "Save this track for later")">
+                <partial name="_SaveIcon" model="Model.Saved" />
+                <span>@(Model.Saved ? "Saved for later" : "Save for later")</span>
+            </button>
+        </form>
+
+        @* Removing a favorite happens on the profile, where the four tiles are — here it's add-only. *@
+        @if (Model.IsFavorite)
+        {
+            <span class="song__pinned">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                    <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z" />
+                </svg>
+                One of your favorites
+            </span>
+        }
+        else if (Model.HasFavoriteSlot)
+        {
+            <form asp-action="AddFavorite" asp-controller="Profile" method="post">
+                <input type="hidden" name="songId" value="@Model.Song.Id" />
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <button type="submit" class="save" title="Pin this track to your profile">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                        <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                    </svg>
+                    <span>Add to favorites</span>
+                </button>
+            </form>
+        }
     </div>
 
     <div class="song__body">

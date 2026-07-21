@@ -135,8 +135,12 @@ public class FollowingFeedTests
         var spotify = Substitute.For<ISpotifyService>();
         spotify.GetNewReleaseTracksAsync().Returns(Array.Empty<SimpleTrack>());
 
+        var listenLater = Substitute.For<IListenLaterService>();
+        listenLater.GetSavedSongIdsAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>>())
+            .Returns(new HashSet<string>());
+
         var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, userId) }, "test");
-        return new HomeController(spotify, reviews, profiles)
+        return new HomeController(spotify, reviews, profiles, listenLater)
         {
             ControllerContext = new ControllerContext
             {

@@ -50,6 +50,76 @@
         </div>
     </header>
 
+    @if (!string.IsNullOrWhiteSpace(Model.User.Bio) || IsCurrentUser)
+    {
+        <section class="profile__bio">
+            @if (!string.IsNullOrWhiteSpace(Model.User.Bio))
+            {
+                <p class="profile__bio-text">@Model.User.Bio</p>
+            }
+            @if (IsCurrentUser)
+            {
+                @* A disclosure rather than a modal: no JS, and it stays shut until there's a reason. *@
+                <details class="disclosure">
+                    <summary class="disclosure__summary">@(string.IsNullOrWhiteSpace(Model.User.Bio) ? "Add a bio" : "Edit bio")</summary>
+                    <form class="disclosure__body" asp-action="UpdateBio" asp-controller="Profile" method="post">
+                        <textarea class="input" name="bio" rows="3" maxlength="@HearditUser.BioMaxLength"
+                                  placeholder="What are you listening to these days?">@Model.User.Bio</textarea>
+                        <div class="disclosure__actions">
+                            <span class="muted">@HearditUser.BioMaxLength characters max.</span>
+                            <button type="submit" class="btn btn-primary btn-sm">Save bio</button>
+                        </div>
+                    </form>
+                </details>
+            }
+        </section>
+    }
+
+    @if (Model.Favorites.Count > 0 || IsCurrentUser)
+    {
+        <section class="profile__section">
+            <h2 class="section-title">Favorites</h2>
+            @if (Model.Favorites.Count > 0)
+            {
+                <div class="favorites">
+                    @foreach (FavoriteTrack favorite in Model.Favorites)
+                    {
+                        <div class="favorite">
+                            <a class="favorite__tile" asp-controller="Songs" asp-action="Index" asp-route-songId="@favorite.SongId"
+                               title="@favorite.Song.Title by @favorite.Song.Artist">
+                                @if (!string.IsNullOrWhiteSpace(favorite.Song.AlbumArt))
+                                {
+                                    <img class="favorite__art" src="@favorite.Song.AlbumArt" alt="" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <span class="favorite__art favorite__art--blank" aria-hidden="true"></span>
+                                }
+                                <span class="favorite__meta">
+                                    <span class="favorite__title">@favorite.Song.Title</span>
+                                    <span class="favorite__artist">@favorite.Song.Artist</span>
+                                </span>
+                            </a>
+                            @if (IsCurrentUser)
+                            {
+                                <form asp-action="RemoveFavorite" asp-controller="Profile" method="post">
+                                    <input type="hidden" name="songId" value="@favorite.SongId" />
+                                    <button type="submit" class="favorite__remove" aria-label="Remove @favorite.Song.Title from your favorites" title="Remove from favorites">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty">Pin up to @FavoriteTrack.MaxPerUser tracks here from any song page.</div>
+            }
+        </section>
+    }
+
     <section class="profile__section">
         <h2 class="section-title">Reviews</h2>
         @if (Model.Reviews.Count > 0)
