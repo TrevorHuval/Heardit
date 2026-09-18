@@ -28,6 +28,7 @@ namespace Heardit.Controllers
                 Id = l.SongId,
                 Name = l.Song.Title ?? string.Empty,
                 Artists = l.Song.Artist ?? string.Empty,
+                ImageUrl = l.Song.AlbumArt,
                 Saved = true
             }).ToList();
 

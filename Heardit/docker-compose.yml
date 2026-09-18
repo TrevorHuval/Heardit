@@ -8,6 +8,8 @@ services:
       ConnectionStrings__HearditDbContextConnection: "Host=db;Port=5432;Database=heardit;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Spotify__ClientId: "${Spotify__ClientId}"
       Spotify__ClientSecret: "${Spotify__ClientSecret}"
+    volumes:
+      - heardit-data:/data
     depends_on:
       db:
         condition: service_healthy
@@ -32,3 +34,4 @@ services:
 
 volumes:
   heardit-pgdata:
+  heardit-data:

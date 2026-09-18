@@ -66,7 +66,8 @@ namespace Heardit.Controllers
             {
                 Id = t.Id,
                 Name = t.Name,
-                Artists = string.Join(", ", t.Artists.Select(a => a.Name))
+                Artists = t.Artists,
+                ImageUrl = t.ImageUrl
             }).ToList();
 
             await FeedStats.ApplyAsync(_reviewService, feed);

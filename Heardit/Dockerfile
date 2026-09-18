@@ -22,6 +22,11 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
+# Data-protection key ring lives here in production (appsettings.Production.json); mount a volume
+# over /data so it survives container replacement. Owned by the runtime user before we drop root.
+RUN mkdir -p /data/keys && chown -R app:app /data
+VOLUME /data
+
 # The aspnet image ships a non-root `app` user; run as it.
 USER app
 

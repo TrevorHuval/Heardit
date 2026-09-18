@@ -133,7 +133,7 @@ public class FollowingFeedTests
     private static HomeController MakeHomeController(IReviewService reviews, IProfileService profiles, string userId)
     {
         var spotify = Substitute.For<ISpotifyService>();
-        spotify.GetNewReleaseTracksAsync().Returns(Array.Empty<SimpleTrack>());
+        spotify.GetNewReleaseTracksAsync().Returns(Array.Empty<TrackSummary>());
 
         var listenLater = Substitute.For<IListenLaterService>();
         listenLater.GetSavedSongIdsAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>>())

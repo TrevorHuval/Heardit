@@ -4,8 +4,22 @@
     {
       "name": "heardit",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--launch-profile", "http"],
+      "runtimeArgs": [
+        "run",
+        "--launch-profile",
+        "http"
+      ],
       "port": 5046
+    },
+    {
+      "name": "heardit-pathbase",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--launch-profile",
+        "http-pathbase"
+      ],
+      "port": 5047
     }
   ]
 }

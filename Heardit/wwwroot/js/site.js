@@ -117,6 +117,51 @@
         });
     }
 
+    // ----- Click-to-play feed cards ------------------------------------------
+    // A feed card renders album art instead of the Spotify embed. Clicking the
+    // cover swaps the real player in (one iframe, only for the track that was
+    // asked for), so a page of twenty tracks doesn't load twenty players up front.
+    function initCover(player) {
+        var cover = player.querySelector('[data-play]');
+        var src = player.getAttribute('data-embed');
+        if (!cover || !src) return;
+
+        cover.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (player.classList.contains('is-loading')) return;
+
+            // The embed takes a moment to boot, so the cover stays put (dimmed, with the play
+            // button spinning) and the player fades in over it once it has actually rendered.
+            player.classList.add('is-loading');
+            cover.setAttribute('aria-busy', 'true');
+
+            var frame = document.createElement('iframe');
+            frame.src = src;
+            frame.height = '152';
+            frame.title = player.getAttribute('data-embed-title') || 'Spotify player';
+            frame.setAttribute('allow', 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');
+            frame.setAttribute('allowfullscreen', '');
+
+            var revealed = false;
+            function reveal() {
+                if (revealed) return;
+                revealed = true;
+                player.classList.remove('is-loading');
+                player.classList.add('is-playing');
+                frame.addEventListener('transitionend', function () { cover.remove(); }, { once: true });
+                // No transition (reduced motion) still needs the cover gone.
+                window.setTimeout(function () { if (cover.parentNode) cover.remove(); }, 400);
+            }
+            frame.addEventListener('load', function () {
+                // The iframe's own UI paints a beat after the load event; hold the cover until then.
+                window.setTimeout(reveal, 250);
+            });
+            window.setTimeout(reveal, 4000); // never leave the card stuck if the load event is lost
+
+            player.appendChild(frame);
+        });
+    }
+
     // ----- Dismissible flash message -----------------------------------------
     function initFlash(flash) {
         var close = flash.querySelector('[data-flash-close]');
@@ -130,5 +175,6 @@
     document.querySelectorAll('.js-rating-meter').forEach(initMeter);
     initEditToggle();
     initSort();
+    document.querySelectorAll('[data-embed]').forEach(initCover);
     document.querySelectorAll('[data-flash]').forEach(initFlash);
 })();

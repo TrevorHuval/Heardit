@@ -8,7 +8,7 @@
 @if (SignInManager.IsSignedIn(User))
 {
     var userName = UserManager.GetUserName(User);
-    <a id="manage" class="nav-user" href="/Profile?username=@userName" title="@userName">
+    <a id="manage" class="nav-user" asp-area="" asp-controller="Profile" asp-action="Index" asp-route-username="@userName" title="@userName">
         <partial name="_Avatar" model="@(new AvatarViewModel(userName, "xs"))" />
         <span class="nav-user__name">@userName</span>
     </a>

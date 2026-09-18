@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,42 @@ using SpotifyAPI.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Optional sub-path when hosted behind a reverse proxy next to other apps on one domain
+// (PathBase=/heardit for https://example.com/heardit). Normalised once; used for the middleware
+// and to scope the cookies so they never collide with another app on the same host.
+var pathBase = builder.Configuration["PathBase"];
+pathBase = string.IsNullOrWhiteSpace(pathBase) ? null : "/" + pathBase.Trim().Trim('/');
+
 builder.Services.AddDbContext<HearditDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
 
 builder.Services.AddDefaultIdentity<HearditUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<HearditDbContext>();
+
+// Identity's default cookie name is the same in every ASP.NET app. Two of them on one domain
+// (this app and Plannit, say) would overwrite each other's login, so name and scope ours.
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name = "Heardit.Auth";
+    options.Cookie.Path = pathBase ?? "/";
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = "Heardit.Antiforgery";
+    options.Cookie.Path = pathBase ?? "/";
+});
+
+// Persist the key ring outside the container so a redeploy doesn't log everyone out and
+// invalidate every antiforgery token in flight. Unset means the default in-container location.
+var dataProtectionKeyPath = builder.Configuration["DataProtection:KeyPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeyPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeyPath))
+        .SetApplicationName("Heardit");
+}
+
+builder.Services.AddHealthChecks();
 
 // Spotify configuration bound from user-secrets / environment (never committed).
 builder.Services.AddOptions<SpotifyOptions>()
@@ -94,6 +126,12 @@ using (var scope = app.Services.CreateScope())
 
 // Configure the HTTP request pipeline.
 
+// First, so routing, generated URLs, static files and login redirects all carry the prefix.
+if (pathBase != null)
+{
+    app.UsePathBase(pathBase);
+}
+
 // Must run before any middleware that inspects the scheme or client IP (HTTPS redirect, HSTS, cookies).
 app.UseForwardedHeaders();
 
@@ -127,8 +165,24 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+// The health probe is hit over plain HTTP from inside the host network, with no forwarded
+// scheme to satisfy the redirect, so it is the one path that skips it.
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/healthz"),
+    branch => branch.UseHttpsRedirection());
+
+// Everything under wwwroot is either fingerprinted (asp-append-version adds ?v=) or a vendored
+// library that only changes with a deploy, so let browsers keep it.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var versioned = ctx.Context.Request.Query.ContainsKey("v");
+        ctx.Context.Response.Headers.CacheControl = versioned
+            ? "public,max-age=31536000,immutable"
+            : "public,max-age=86400";
+    }
+});
 
 app.UseRouting();
 app.UseAuthentication();
@@ -140,5 +194,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapRazorPages();
+
+// Liveness for the reverse proxy / compose. Anonymous, and outside the auth fallback policy.
+app.MapHealthChecks("/healthz").AllowAnonymous();
 
 app.Run();

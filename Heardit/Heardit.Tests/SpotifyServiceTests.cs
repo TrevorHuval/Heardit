@@ -89,9 +89,19 @@ public class SpotifyServiceTests
             {
                 new()
                 {
+                    Images = new List<Image>
+                    {
+                        new() { Url = "https://img/640", Width = 640, Height = 640 },
+                        new() { Url = "https://img/300", Width = 300, Height = 300 },
+                        new() { Url = "https://img/64", Width = 64, Height = 64 }
+                    },
                     Tracks = new Paging<SimpleTrack>
                     {
-                        Items = new List<SimpleTrack> { new() { Id = "t1", Name = "Lead One" }, new() { Id = "t2", Name = "Deep Cut" } }
+                        Items = new List<SimpleTrack>
+                        {
+                            new() { Id = "t1", Name = "Lead One", Artists = new List<SimpleArtist> { new() { Name = "A" }, new() { Name = "B" } } },
+                            new() { Id = "t2", Name = "Deep Cut" }
+                        }
                     }
                 },
                 new()
@@ -111,6 +121,10 @@ public class SpotifyServiceTests
 
         Assert.NotNull(first);
         Assert.Equal(new[] { "Lead One", "Lead Two" }, first!.Select(t => t.Name));
+        // The card cover comes from the album at the mid-size image; artists are joined for display.
+        Assert.Equal("https://img/300", first[0].ImageUrl);
+        Assert.Equal("A, B", first[0].Artists);
+        Assert.Null(first[1].ImageUrl);
         Assert.Same(first, second);
 #pragma warning disable CS0618
         await client.Browse.Received(1).GetNewReleases();

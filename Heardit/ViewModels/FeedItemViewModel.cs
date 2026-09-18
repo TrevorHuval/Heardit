@@ -9,6 +9,9 @@ namespace Heardit.ViewModels
 
         public string Artists { get; set; } = string.Empty;
 
+        /// <summary>Album art for the card cover. The Spotify player only loads once the cover is clicked.</summary>
+        public string? ImageUrl { get; set; }
+
         /// <summary>Average rating, or null when the track has no reviews yet.</summary>
         public decimal? AverageRating { get; set; }
 

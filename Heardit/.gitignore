@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local design notes; markdown scratch files stay out of git.
+.interface-design/

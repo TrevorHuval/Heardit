@@ -4,17 +4,23 @@ using SpotifyAPI.Web;
 
 namespace Heardit.Services
 {
+    /// <summary>
+    /// What a feed card needs to draw a track without loading a Spotify player: identity, credits,
+    /// and album art. Both the new-releases and search paths flatten Spotify's own models to this.
+    /// </summary>
+    public record TrackSummary(string Id, string Name, string Artists, string? ImageUrl);
+
     public interface ISpotifyService
     {
         /// <summary>Lead track of each current New Release album (homepage feed).
         /// Null means Spotify could not be reached; an empty list means it had nothing to give.</summary>
-        Task<IReadOnlyList<SimpleTrack>?> GetNewReleaseTracksAsync();
+        Task<IReadOnlyList<TrackSummary>?> GetNewReleaseTracksAsync();
 
         /// <summary>A single track by Spotify id, or null if the id is invalid or not found.</summary>
         Task<FullTrack?> GetTrackAsync(string trackId);
 
         /// <summary>Track search results. Null means Spotify could not be reached; empty means no matches.</summary>
-        Task<IReadOnlyList<FullTrack>?> SearchTracksAsync(string query);
+        Task<IReadOnlyList<TrackSummary>?> SearchTracksAsync(string query);
     }
 
     public class SpotifyService : ISpotifyService
@@ -49,9 +55,9 @@ namespace Heardit.Services
             _logger = logger;
         }
 
-        public async Task<IReadOnlyList<SimpleTrack>?> GetNewReleaseTracksAsync()
+        public async Task<IReadOnlyList<TrackSummary>?> GetNewReleaseTracksAsync()
         {
-            if (_cache.TryGetValue(NewReleasesCacheKey, out IReadOnlyList<SimpleTrack>? cached) && cached != null)
+            if (_cache.TryGetValue(NewReleasesCacheKey, out IReadOnlyList<TrackSummary>? cached) && cached != null)
             {
                 return cached;
             }
@@ -74,25 +80,30 @@ namespace Heardit.Services
 
                 if (albumIds.Count == 0)
                 {
-                    return Array.Empty<SimpleTrack>();
+                    return Array.Empty<TrackSummary>();
                 }
 
                 var albums = await _spotify.Albums.GetSeveral(new AlbumsRequest(albumIds));
 #pragma warning restore CS0618
 
-                var leadTracks = new List<SimpleTrack>();
+                var leadTracks = new List<TrackSummary>();
                 foreach (var album in albums.Albums)
                 {
                     var firstTrack = album.Tracks?.Items?.FirstOrDefault();
-                    if (firstTrack != null)
+                    if (firstTrack != null && !string.IsNullOrEmpty(firstTrack.Id))
                     {
-                        leadTracks.Add(firstTrack);
+                        // A track inside an album response carries no album of its own; the art comes from the parent.
+                        leadTracks.Add(new TrackSummary(
+                            firstTrack.Id,
+                            firstTrack.Name,
+                            JoinArtists(firstTrack.Artists),
+                            CardImage(album.Images)));
                     }
                 }
 
                 if (leadTracks.Count > 0)
                 {
-                    _cache.Set(NewReleasesCacheKey, (IReadOnlyList<SimpleTrack>)leadTracks, Entry(NewReleasesTtl, ListEntrySize));
+                    _cache.Set(NewReleasesCacheKey, (IReadOnlyList<TrackSummary>)leadTracks, Entry(NewReleasesTtl, ListEntrySize));
                 }
 
                 return leadTracks;
@@ -135,18 +146,18 @@ namespace Heardit.Services
             }
         }
 
-        public async Task<IReadOnlyList<FullTrack>?> SearchTracksAsync(string query)
+        public async Task<IReadOnlyList<TrackSummary>?> SearchTracksAsync(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
-                return Array.Empty<FullTrack>();
+                return Array.Empty<TrackSummary>();
             }
 
             var trimmed = query.Trim();
             var cacheable = trimmed.Length <= MaxCacheableQueryLength;
             var cacheKey = $"spotify:search:{trimmed.ToLowerInvariant()}";
 
-            if (cacheable && _cache.TryGetValue(cacheKey, out IReadOnlyList<FullTrack>? cached) && cached != null)
+            if (cacheable && _cache.TryGetValue(cacheKey, out IReadOnlyList<TrackSummary>? cached) && cached != null)
             {
                 return cached;
             }
@@ -155,10 +166,13 @@ namespace Heardit.Services
             {
                 _logger.LogInformation("Cache miss: searching the Spotify API for {Query}.", query);
                 var searchRes = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, query));
-                var results = searchRes.Tracks?.Items ?? new List<FullTrack>();
+                var results = (searchRes.Tracks?.Items ?? new List<FullTrack>())
+                    .Where(t => !string.IsNullOrEmpty(t.Id))
+                    .Select(t => new TrackSummary(t.Id, t.Name, JoinArtists(t.Artists), CardImage(t.Album?.Images)))
+                    .ToList();
                 if (cacheable && results.Count > 0)
                 {
-                    _cache.Set(cacheKey, (IReadOnlyList<FullTrack>)results, Entry(SearchTtl, ListEntrySize));
+                    _cache.Set(cacheKey, (IReadOnlyList<TrackSummary>)results, Entry(SearchTtl, ListEntrySize));
                 }
 
                 return results;
@@ -172,5 +186,23 @@ namespace Heardit.Services
 
         private static MemoryCacheEntryOptions Entry(TimeSpan ttl, long size) =>
             new() { AbsoluteExpirationRelativeToNow = ttl, Size = size };
+
+        private static string JoinArtists(IEnumerable<SimpleArtist>? artists) =>
+            artists == null
+                ? string.Empty
+                : string.Join(", ", artists.Select(a => a.Name).Where(n => !string.IsNullOrEmpty(n)));
+
+        // Spotify lists album images largest first (640 / 300 / 64). A feed card is ~300px wide, so the
+        // middle size is the sweet spot; fall back to the first one when the set is unusual.
+        private static string? CardImage(IEnumerable<Image>? images)
+        {
+            var list = images?.Where(i => !string.IsNullOrEmpty(i.Url)).ToList();
+            if (list == null || list.Count == 0)
+            {
+                return null;
+            }
+
+            return (list.FirstOrDefault(i => i.Width is >= 200 and <= 400) ?? list[0]).Url;
+        }
     }
 }

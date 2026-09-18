@@ -1,4 +1,4 @@
-﻿{
+{
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
@@ -15,6 +15,16 @@
       "applicationUrl": "http://localhost:5046",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "http-pathbase": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5047",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "PathBase": "/heardit"
       }
     },
     "https": {

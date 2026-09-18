@@ -27,6 +27,10 @@ Every page is behind a login. There is no anonymous view.
 No frontend framework: one CSS file of design tokens (`wwwroot/css/site.css`) and one short
 script. Follow, like and save are plain form POSTs, so they work without JavaScript.
 
+Feed cards show album art, not a Spotify player. A Spotify embed is a few megabytes of script,
+and a page of twenty of them is what made the app feel slow; now one loads only when its cover
+is clicked. The song page still leads with the full player.
+
 ## architecture
 
 Controllers are thin — resolve the current user, call a service, hand a view model to a view.
@@ -96,8 +100,11 @@ Serves http://localhost:5046. Migrations apply on startup, so the database creat
 
 ## deploy
 
-See [Heardit/docs/DEPLOY.md](Heardit/docs/DEPLOY.md) — configuration, compose, and running behind
-a TLS-terminating reverse proxy.
+Live at [trevorhuval.com/heardit](https://trevorhuval.com/heardit). CI publishes
+`ghcr.io/trevorhuval/heardit` on every push to `master`; the
+[trevorhuval-infra](https://github.com/TrevorHuval/trevorhuval-infra) stack pulls it and serves
+it under `/heardit` behind Caddy. See [Heardit/docs/DEPLOY.md](Heardit/docs/DEPLOY.md) for
+configuration, the sub-path setup, and running behind a TLS-terminating reverse proxy.
 
 ## known limitations
 

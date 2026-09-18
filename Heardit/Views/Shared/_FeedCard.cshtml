@@ -3,11 +3,37 @@
     // Saving is a form POST, so the page reloads; come back to this feed, this page, this card.
     var anchor = $"track-{Model.Id}";
     var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}#{anchor}";
+    var embedSrc = $"https://open.spotify.com/embed/track/{Model.Id}?utm_source=generator&theme=0";
+    var credit = string.IsNullOrWhiteSpace(Model.Artists) ? Model.Name : $"{Model.Name} by {Model.Artists}";
 }
 
 <article class="track" id="@anchor">
-    <div class="track__player">
-        <iframe src="https://open.spotify.com/embed/track/@Model.Id?utm_source=generator&theme=0" height="152" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="@Model.Name by @Model.Artists"></iframe>
+    @* The Spotify player is a few megabytes of script per card, so a feed of twenty never loads one
+       up front. The cover stands in; clicking it swaps the real embed in (site.js) and the player
+       takes it from there. Without JavaScript the cover is a plain link to the song page. *@
+    <div class="track__player" data-embed="@embedSrc" data-embed-title="@credit">
+        <a class="cover" asp-area="" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Id" data-play aria-label="Play @credit">
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <img class="cover__art" src="@Model.ImageUrl" alt="" loading="lazy" decoding="async" width="300" height="300" />
+            }
+            else
+            {
+                <span class="cover__art cover__art--blank" aria-hidden="true"></span>
+            }
+            <span class="cover__meta">
+                <span class="cover__name">@Model.Name</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Artists))
+                {
+                    <span class="cover__artists">@Model.Artists</span>
+                }
+            </span>
+            <span class="cover__play" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                    <path d="M8 5.5v13a1 1 0 0 0 1.5.87l11-6.5a1 1 0 0 0 0-1.74l-11-6.5A1 1 0 0 0 8 5.5z" />
+                </svg>
+            </span>
+        </a>
     </div>
     <div class="track__foot">
         <form asp-action="Toggle" asp-controller="ListenLater" method="post">
