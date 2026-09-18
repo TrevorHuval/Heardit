@@ -7,7 +7,7 @@
     var createdUnix = new DateTimeOffset(createdUtc).ToUnixTimeSeconds();
     // Liking is a form POST, so the page reloads; come back to this list, this page, this review.
     var anchor = $"review-{Model.Review.ReviewId}";
-    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}#{anchor}";
+    var returnUrl = $"{Context.Request.GetEncodedPathAndQuery()}#{anchor}";
 }
 
 @functions {

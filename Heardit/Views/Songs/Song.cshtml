@@ -8,7 +8,7 @@
     var avgRating = Model.AverageRating;
     var editing = myReview != null; // composer starts collapsed when a review already exists
     // Both toggles post and come back here, so they carry the page they were pressed on.
-    var returnUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var returnUrl = Context.Request.GetEncodedPathAndQuery();
 }
 
 <div class="song">

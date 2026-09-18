@@ -9,7 +9,7 @@
     string PageUrl(int page)
     {
         var values = new Dictionary<string, string?>(carried) { ["page"] = page.ToString() };
-        return QueryHelpers.AddQueryString(Context.Request.Path, values);
+        return QueryHelpers.AddQueryString(Context.Request.PathBase.Add(Context.Request.Path).ToUriComponent(), values);
     }
 }
 
