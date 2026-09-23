@@ -121,10 +121,17 @@
     // A feed card renders album art instead of the Spotify embed. Clicking the
     // cover swaps the real player in (one iframe, only for the track that was
     // asked for), so a page of twenty tracks doesn't load twenty players up front.
+    // Spotify track ids are 22 base62 characters. The card hands over only the id;
+    // the player URL is built here from a fixed origin, so nothing read from the
+    // page can point the iframe anywhere but Spotify's embed.
+    var TRACK_ID = /^[A-Za-z0-9]{22}$/;
+    var EMBED_BASE = 'https://open.spotify.com/embed/track/';
+
     function initCover(player) {
         var cover = player.querySelector('[data-play]');
-        var src = player.getAttribute('data-embed');
-        if (!cover || !src) return;
+        var trackId = player.getAttribute('data-embed-track');
+        if (!cover || !trackId || !TRACK_ID.test(trackId)) return;
+        var src = EMBED_BASE + trackId + '?utm_source=generator&theme=0';
 
         cover.addEventListener('click', function (e) {
             e.preventDefault();
@@ -175,6 +182,6 @@
     document.querySelectorAll('.js-rating-meter').forEach(initMeter);
     initEditToggle();
     initSort();
-    document.querySelectorAll('[data-embed]').forEach(initCover);
+    document.querySelectorAll('[data-embed-track]').forEach(initCover);
     document.querySelectorAll('[data-flash]').forEach(initFlash);
 })();

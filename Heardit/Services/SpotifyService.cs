@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using SpotifyAPI.Web;
 
@@ -25,8 +24,6 @@ namespace Heardit.Services
 
     public class SpotifyService : ISpotifyService
     {
-        // Spotify ids are 22-character base62 strings; validate before spending an API call.
-        private static readonly Regex TrackIdPattern = new("^[A-Za-z0-9]{22}$", RegexOptions.Compiled);
 
         // Cache keys and TTLs — Spotify results change slowly, so cache to cut API calls (and stay under rate limits).
         private const string NewReleasesCacheKey = "spotify:newreleases";
@@ -172,7 +169,7 @@ namespace Heardit.Services
 
         public async Task<FullTrack?> GetTrackAsync(string trackId)
         {
-            if (string.IsNullOrWhiteSpace(trackId) || !TrackIdPattern.IsMatch(trackId))
+            if (!SpotifyIds.IsTrackId(trackId))
             {
                 return null;
             }
@@ -185,7 +182,7 @@ namespace Heardit.Services
 
             try
             {
-                _logger.LogInformation("Cache miss: fetching track {TrackId} from the Spotify API.", trackId);
+                _logger.LogInformation("Cache miss: fetching track {TrackId} from the Spotify API.", ForLog(trackId));
                 var track = await _spotify.Tracks.Get(trackId);
                 if (track != null)
                 {
@@ -196,7 +193,7 @@ namespace Heardit.Services
             }
             catch (APIException ex)
             {
-                _logger.LogWarning(ex, "Failed to fetch track {TrackId} from Spotify.", trackId);
+                _logger.LogWarning(ex, "Failed to fetch track {TrackId} from Spotify.", ForLog(trackId));
                 return null;
             }
         }
@@ -219,7 +216,8 @@ namespace Heardit.Services
 
             try
             {
-                _logger.LogInformation("Cache miss: searching the Spotify API for {Query}.", query);
+                // The query itself stays out of the logs: it is the user's own text, and nothing here needs it.
+                _logger.LogInformation("Cache miss: searching the Spotify API.");
                 var searchRes = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Track, query));
                 var results = (searchRes.Tracks?.Items ?? new List<FullTrack>())
                     .Where(t => !string.IsNullOrEmpty(t.Id))
@@ -234,7 +232,7 @@ namespace Heardit.Services
             }
             catch (APIException ex)
             {
-                _logger.LogWarning(ex, "Spotify search failed for query {Query}.", query);
+                _logger.LogWarning(ex, "Spotify track search failed.");
                 return null;
             }
         }
@@ -271,6 +269,13 @@ namespace Heardit.Services
 
             return popularity;
         }
+
+        /// <summary>
+        /// Strips line breaks from a value bound for a log line, so it can't start a fake entry of its own.
+        /// Track ids are already regex-checked before they get here; this keeps that true at the log call too.
+        /// </summary>
+        private static string ForLog(string value) =>
+            value.Replace("\r", string.Empty).Replace("\n", string.Empty);
 
         private static MemoryCacheEntryOptions Entry(TimeSpan ttl, long size) =>
             new() { AbsoluteExpirationRelativeToNow = ttl, Size = size };

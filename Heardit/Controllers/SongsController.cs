@@ -28,6 +28,12 @@ namespace Heardit.Controllers
         [EnableRateLimiting("spotify")]
         public async Task<IActionResult> Index(string songId, int page = 1)
         {
+            // Anything that isn't a Spotify track id can't be a song; turn it away before any lookup.
+            if (!SpotifyIds.IsTrackId(songId))
+            {
+                return NotFound();
+            }
+
             var currentUserId = User.GetLoggedInUserId<string>();
             var model = await _songService.GetSongPageAsync(songId, currentUserId, page);
             if (model == null)

@@ -17,13 +17,13 @@
 
             <div class="field">
                 <label asp-for="Input.UserName" class="field__label"></label>
-                <input asp-for="Input.UserName" class="input" autocomplete="username" aria-required="true" placeholder="Your username" />
+                <input asp-for="Input.UserName" class="input" autocomplete="username" required minlength="4" placeholder="Your username" />
                 <span asp-validation-for="Input.UserName" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.Password" class="field__label"></label>
-                <input asp-for="Input.Password" class="input" autocomplete="current-password" aria-required="true" placeholder="Your password" />
+                <input asp-for="Input.Password" class="input" autocomplete="current-password" required placeholder="Your password" />
                 <span asp-validation-for="Input.Password" class="field__error"></span>
             </div>
 
@@ -43,7 +43,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}

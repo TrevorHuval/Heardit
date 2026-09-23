@@ -16,25 +16,25 @@
 
             <div class="field">
                 <label asp-for="Input.UserName" class="field__label"></label>
-                <input asp-for="Input.UserName" class="input" autocomplete="username" aria-required="true" placeholder="Pick a username" />
+                <input asp-for="Input.UserName" class="input" autocomplete="username" required minlength="4" placeholder="Pick a username" />
                 <span asp-validation-for="Input.UserName" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.Email" class="field__label"></label>
-                <input asp-for="Input.Email" class="input" autocomplete="email" aria-required="true" placeholder="you@example.com" />
+                <input asp-for="Input.Email" class="input" autocomplete="email" required placeholder="you@example.com" />
                 <span asp-validation-for="Input.Email" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.Password" class="field__label"></label>
-                <input asp-for="Input.Password" class="input" autocomplete="new-password" aria-required="true" placeholder="Create a password" />
+                <input asp-for="Input.Password" class="input" autocomplete="new-password" required minlength="6" maxlength="100" placeholder="Create a password" />
                 <span asp-validation-for="Input.Password" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.ConfirmPassword" class="field__label"></label>
-                <input asp-for="Input.ConfirmPassword" class="input" autocomplete="new-password" aria-required="true" placeholder="Re-enter your password" />
+                <input asp-for="Input.ConfirmPassword" class="input" autocomplete="new-password" required placeholder="Re-enter your password" />
                 <span asp-validation-for="Input.ConfirmPassword" class="field__error"></span>
             </div>
 
@@ -46,7 +46,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
