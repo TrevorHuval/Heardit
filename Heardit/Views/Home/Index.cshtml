@@ -1,64 +1,88 @@
-@{
-    ViewData["Title"] = "Heardit";
-}
-
 @model HomeIndexViewModel
-
-<div class="feed__head">
-    <h1 class="feed__title">@(Model.ShowingFollowing ? "Following" : "New Releases")</h1>
-    <p class="feed__sub">
-        @(Model.ShowingFollowing
-            ? "The latest reviews from the listeners you follow."
-            : "Fresh drops from Spotify — play a track, then rate it and read the reviews.")
-    </p>
-</div>
-
-@* Server-side tabs: only the open tab's data is loaded, and the pager carries ?tab= along with it. *@
-<nav class="tabs" aria-label="Feed">
-    <a class="tab @(Model.ShowingFollowing ? "" : "active")" asp-action="Index" asp-controller="Home" asp-route-tab="new">New Releases</a>
-    <a class="tab @(Model.ShowingFollowing ? "active" : "")" asp-action="Index" asp-controller="Home" asp-route-tab="following">Following</a>
-</nav>
-
-@if (Model.ShowingFollowing)
-{
-    if (Model.Reviews.Count > 0)
-    {
-        <div class="reviews">
-            @foreach (Review review in Model.Reviews.Items)
-            {
-                <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
-            }
-        </div>
-        <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
-    }
-    else if (Model.Reviews.HasPrevious)
-    {
-        <div class="empty">Nothing further back than this.</div>
-        <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
-    }
-    else if (!Model.FollowsAnyone)
-    {
-        <div class="empty">You're not following anyone yet — search for a track and see who's reviewing it.</div>
-    }
-    else
-    {
-        <div class="empty">Nothing from people you follow yet.</div>
-    }
+@{
+    ViewData["Title"] = "Home";
 }
-else if (Model.SpotifyUnavailable)
-{
-    <div class="empty">Couldn't reach Spotify just now, so there's nothing to show. Try again in a minute.</div>
-}
-else if (Model.Feed.Count > 0)
-{
-    <div class="feed">
-        @foreach (var item in Model.Feed)
+
+<div class="home">
+    <section class="home-section" aria-labelledby="friends-title">
+        <partial name="_SectionHead" model="@(new SectionHeadViewModel("friends-title", "From people you follow", SeeAllAction: Model.MoreFriendReviews ? "Following" : null))" />
+        @if (!Model.FollowsAnyone)
         {
-            <partial name="_FeedCard" model="item" />
+            <div class="prompt-card">
+                <p class="prompt-card__text">
+                    Follow other listeners and their reviews show up here first.
+                    Find someone in the latest reviews below, or search for them by name.
+                </p>
+                <a class="btn btn-ghost btn-sm" asp-controller="Home" asp-action="Latest">Browse reviews</a>
+            </div>
         }
-    </div>
-}
-else
-{
-    <div class="empty">No new releases to show right now. Check back soon.</div>
-}
+        else if (Model.FriendReviews.Count > 0)
+        {
+            <div class="reviews">
+                @foreach (Review review in Model.FriendReviews)
+                {
+                    <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty">Nothing from people you follow yet.</div>
+        }
+    </section>
+
+    @if (Model.Trending.Count > 0)
+    {
+        <section class="home-section" aria-labelledby="trending-title">
+            <partial name="_SectionHead" model="@(new SectionHeadViewModel(
+                "trending-title",
+                Model.TrendingIsAllTime ? "Most reviewed" : "Trending this week",
+                Model.TrendingIsAllTime ? "What Heardit listeners have talked about most." : "Most reviews and likes on Heardit in the last seven days.",
+                "Trending"))" />
+            <div class="shelf" role="list">
+                @foreach (var tile in Model.Trending)
+                {
+                    <div class="shelf__item" role="listitem"><partial name="_ShelfTile" model="tile" /></div>
+                }
+            </div>
+        </section>
+    }
+
+    <section class="home-section" aria-labelledby="releases-title">
+        <partial name="_SectionHead" model="@(new SectionHeadViewModel("releases-title", "New Releases", "The biggest drops on Spotify from the last two weeks.", Model.NewReleases.Count > 0 ? "NewReleases" : null))" />
+        @if (Model.SpotifyUnavailable)
+        {
+            <div class="empty">Couldn't reach Spotify just now. Try again in a minute.</div>
+        }
+        else if (Model.NewReleases.Count > 0)
+        {
+            <div class="shelf" role="list">
+                @foreach (var tile in Model.NewReleases)
+                {
+                    <div class="shelf__item" role="listitem"><partial name="_ShelfTile" model="tile" /></div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty">No new releases to show right now. Check back soon.</div>
+        }
+    </section>
+
+    <section class="home-section" aria-labelledby="latest-title">
+        <partial name="_SectionHead" model="@(new SectionHeadViewModel("latest-title", "Latest from everyone", SeeAllAction: Model.LatestReviews.Count > 0 ? "Latest" : null))" />
+        @if (Model.LatestReviews.Count > 0)
+        {
+            <div class="reviews">
+                @foreach (Review review in Model.LatestReviews)
+                {
+                    <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty">Nobody has reviewed anything yet. Search for a track and be the first.</div>
+        }
+    </section>
+</div>

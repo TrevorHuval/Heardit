@@ -1,0 +1,32 @@
+@model TrackGridViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<a class="back-link" asp-controller="Home" asp-action="Index">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    Home
+</a>
+
+<div class="feed__head">
+    <h1 class="feed__title">@Model.Title</h1>
+    <p class="feed__sub">@Model.Subtitle</p>
+</div>
+
+@if (Model.SpotifyUnavailable)
+{
+    <div class="empty">Couldn't reach Spotify just now, so there's nothing to show. Try again in a minute.</div>
+}
+else if (Model.Tracks.Count > 0)
+{
+    <div class="feed">
+        @foreach (var item in Model.Tracks)
+        {
+            <partial name="_FeedCard" model="item" />
+        }
+    </div>
+}
+else
+{
+    <div class="empty">@Model.EmptyMessage</div>
+}

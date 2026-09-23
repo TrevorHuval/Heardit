@@ -1,0 +1,34 @@
+@model ReviewFeedViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<a class="back-link" asp-controller="Home" asp-action="Index">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    Home
+</a>
+
+<div class="feed__head">
+    <h1 class="feed__title">@Model.Title</h1>
+    <p class="feed__sub">@Model.Subtitle</p>
+</div>
+
+@if (Model.Reviews.Count > 0)
+{
+    <div class="reviews">
+        @foreach (Review review in Model.Reviews.Items)
+        {
+            <partial name="_ReviewPartial" model="@ReviewViewModel.For(review, Model.LikeStats)" />
+        }
+    </div>
+    <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
+}
+else if (Model.Reviews.HasPrevious)
+{
+    <div class="empty">Nothing further back than this.</div>
+    <partial name="_Pager" model="@PagerViewModel.For(Model.Reviews)" />
+}
+else
+{
+    <div class="empty">@Model.EmptyMessage</div>
+}

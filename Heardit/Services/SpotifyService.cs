@@ -34,6 +34,13 @@ namespace Heardit.Services
         private static readonly TimeSpan TrackTtl = TimeSpan.FromHours(24);
         private static readonly TimeSpan SearchTtl = TimeSpan.FromMinutes(5);
 
+        // New-release feed: how far into the `tag:new` results to look, and how many releases to keep.
+        private const string NewReleaseMarket = "US";
+        private const int NewReleaseSearchPage = 50;
+        private const int NewReleaseSearchDepth = 100;
+        private const int NewReleaseCount = 20;
+        private const int ArtistBatchSize = 50;
+
         // The cache is size-bounded (see Program.cs), so every entry declares a size: roughly its row
         // count, so a list of results costs more of the budget than a single track. Every Set below must
         // set one — an entry without a size throws once the cache has a SizeLimit.
@@ -65,29 +72,77 @@ namespace Heardit.Services
             try
             {
                 _logger.LogInformation("Cache miss: fetching new releases from the Spotify API.");
-                // SpotifyAPI.Web 7 marks GetNewReleases / Albums.GetSeveral obsolete because Spotify
-                // deprecated these endpoints, but they still return data for this app's client-credentials
-                // token and back the New Releases homepage (see plan phases 1/4). Replacing the homepage
-                // data source is tracked separately; suppress the deprecation noise until then.
-#pragma warning disable CS0618 // Spotify endpoint deprecated but still functional; see comment above.
-                var newReleases = await _spotify.Browse.GetNewReleases();
 
-                var albumIds = newReleases.Albums?.Items?
-                    .Where(a => !string.IsNullOrEmpty(a.Id))
-                    .Select(a => a.Id)
-                    .Take(20)
-                    .ToList() ?? new List<string>();
+                // Spotify's own /browse/new-releases stopped updating in April 2024 for this app, so the
+                // feed is built from search instead: `tag:new` matches albums released in the last two
+                // weeks. Those come back unranked and global, and a fresh album's own popularity is always
+                // 0, so the ranking comes from how popular each release's lead artist is.
+                var albums = new List<SimpleAlbum>();
+                for (var offset = 0; offset < NewReleaseSearchDepth; offset += NewReleaseSearchPage)
+                {
+                    var page = await _spotify.Search.Item(new SearchRequest(SearchRequest.Types.Album, "tag:new")
+                    {
+                        Market = NewReleaseMarket,
+                        Limit = NewReleaseSearchPage,
+                        Offset = offset
+                    });
 
-                if (albumIds.Count == 0)
+                    var items = page.Albums?.Items;
+                    if (items == null || items.Count == 0)
+                    {
+                        break;
+                    }
+
+                    albums.AddRange(items.Where(a => a != null && !string.IsNullOrEmpty(a.Id) && a.Artists?.Count > 0));
+                    if (items.Count < NewReleaseSearchPage)
+                    {
+                        break;
+                    }
+                }
+
+                if (albums.Count == 0)
                 {
                     return Array.Empty<TrackSummary>();
                 }
 
-                var albums = await _spotify.Albums.GetSeveral(new AlbumsRequest(albumIds));
+                var popularity = await GetArtistPopularityAsync(albums.Select(a => a.Artists[0].Id));
+
+                // One release per artist, counting every credited artist, not just the lead: a deluxe
+                // edition and its lead single don't take two slots, and a soundtrack's singles (each
+                // credited to its performer plus the soundtrack) don't fill the shelf with one cover.
+                // Without popularity (the artist lookup failed) the newest releases come first.
+                var ranked = albums
+                    .Select((album, index) => (album, index))
+                    .OrderByDescending(x => popularity.GetValueOrDefault(x.album.Artists[0].Id))
+                    .ThenByDescending(x => x.album.ReleaseDate, StringComparer.Ordinal)
+                    .ThenBy(x => x.index)
+                    .Select(x => x.album);
+
+                var seenArtists = new HashSet<string>();
+                var picked = new List<SimpleAlbum>();
+                foreach (var album in ranked)
+                {
+                    var artistIds = album.Artists.Select(a => a.Id).Where(id => !string.IsNullOrEmpty(id)).ToList();
+                    if (artistIds.Any(seenArtists.Contains))
+                    {
+                        continue;
+                    }
+
+                    seenArtists.UnionWith(artistIds);
+                    picked.Add(album);
+                    if (picked.Count == NewReleaseCount)
+                    {
+                        break;
+                    }
+                }
+
+                // Search albums carry no track listing; one batched album lookup finds each lead track.
+#pragma warning disable CS0618 // SDK marks Albums.GetSeveral obsolete; the endpoint still works for this app.
+                var full = await _spotify.Albums.GetSeveral(new AlbumsRequest(picked.Select(a => a.Id).ToList()));
 #pragma warning restore CS0618
 
                 var leadTracks = new List<TrackSummary>();
-                foreach (var album in albums.Albums)
+                foreach (var album in full.Albums.Where(a => a != null))
                 {
                     var firstTrack = album.Tracks?.Items?.FirstOrDefault();
                     if (firstTrack != null && !string.IsNullOrEmpty(firstTrack.Id))
@@ -182,6 +237,39 @@ namespace Heardit.Services
                 _logger.LogWarning(ex, "Spotify search failed for query {Query}.", query);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Popularity (0–100) per artist id. A failed lookup yields an empty map rather than failing the
+        /// feed: the releases are still worth showing, just unranked.
+        /// </summary>
+        private async Task<Dictionary<string, int>> GetArtistPopularityAsync(IEnumerable<string> artistIds)
+        {
+            var ids = artistIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            var popularity = new Dictionary<string, int>();
+
+            try
+            {
+                // The SDK marks GET /artists and `popularity` as removed, but both still answer for this
+                // app (checked September 2026). If Spotify does pull them, this lands in the catch below
+                // and the feed carries on unranked.
+#pragma warning disable CS0618
+                foreach (var batch in ids.Chunk(ArtistBatchSize))
+                {
+                    var response = await _spotify.Artists.GetSeveral(new ArtistsRequest(batch.ToList()));
+                    foreach (var artist in response.Artists.Where(a => a != null))
+                    {
+                        popularity[artist.Id] = artist.Popularity;
+                    }
+                }
+#pragma warning restore CS0618
+            }
+            catch (APIException ex)
+            {
+                _logger.LogWarning(ex, "Could not rank new releases by artist popularity; showing them unranked.");
+            }
+
+            return popularity;
         }
 
         private static MemoryCacheEntryOptions Entry(TimeSpan ttl, long size) =>

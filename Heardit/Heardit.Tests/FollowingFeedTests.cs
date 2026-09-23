@@ -130,10 +130,25 @@ public class FollowingFeedTests
         Assert.False(await service.IsFollowingAnyoneAsync(""));
     }
 
-    private static HomeController MakeHomeController(IReviewService reviews, IProfileService profiles, string userId)
+    // Default homepage dependencies: every feed empty, Spotify answering with nothing.
+    private static IReviewService EmptyReviewService()
+    {
+        var reviews = Substitute.For<IReviewService>();
+        reviews.GetFollowingFeedAsync(Arg.Any<string>(), Arg.Any<int>()).Returns(PagedList<Review>.Empty());
+        reviews.GetRecentReviewsAsync(Arg.Any<int>()).Returns(PagedList<Review>.Empty());
+        reviews.GetTrendingAsync(Arg.Any<int>()).Returns(new TrendingResult(Array.Empty<TrendingSong>(), false));
+        reviews.GetSongStatsAsync(Arg.Any<IEnumerable<string>>()).Returns(new Dictionary<string, SongReviewStats>());
+        reviews.GetLikeStatsAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<string?>())
+            .Returns(new Dictionary<string, ReviewLikeStats>());
+        return reviews;
+    }
+
+    private static HomeController MakeHomeController(
+        IReviewService reviews, IProfileService profiles, string userId,
+        IReadOnlyList<TrackSummary>? releases = null, bool spotifyDown = false)
     {
         var spotify = Substitute.For<ISpotifyService>();
-        spotify.GetNewReleaseTracksAsync().Returns(Array.Empty<TrackSummary>());
+        spotify.GetNewReleaseTracksAsync().Returns(spotifyDown ? null : releases ?? Array.Empty<TrackSummary>());
 
         var listenLater = Substitute.For<IListenLaterService>();
         listenLater.GetSavedSongIdsAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>>())
@@ -149,46 +164,107 @@ public class FollowingFeedTests
         };
     }
 
-    private static async Task<HomeIndexViewModel> IndexModelAsync(HomeController controller, string? tab)
+    private static async Task<HomeIndexViewModel> IndexModelAsync(HomeController controller)
     {
-        var result = Assert.IsType<ViewResult>(await controller.Index(tab));
+        var result = Assert.IsType<ViewResult>(await controller.Index(null));
         return Assert.IsType<HomeIndexViewModel>(result.Model);
     }
 
-    [Theory]
-    [InlineData(true, null, true)]        // follows someone, no tab asked for → Following
-    [InlineData(false, null, false)]      // follows nobody → New Releases leads
-    [InlineData(true, "new", false)]      // an explicit tab always wins
-    [InlineData(false, "following", true)]
-    public async Task Index_DefaultsToFollowingOnlyWhenTheUserFollowsSomeone(bool followsAnyone, string? tab, bool expectFollowing)
+    private static PagedList<Review> PageOf(int count, bool hasNext = false)
     {
-        var reviews = Substitute.For<IReviewService>();
-        reviews.GetFollowingFeedAsync(Arg.Any<string>(), Arg.Any<int>()).Returns(PagedList<Review>.Empty());
-        reviews.GetLikeStatsAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<string?>())
-            .Returns(new Dictionary<string, ReviewLikeStats>());
+        var author = TestData.MakeUser("author");
+        var items = Enumerable.Range(0, count)
+            .Select(i => ReviewAt(author, $"song{i}", DateTime.UtcNow.AddMinutes(-i)))
+            .ToList();
+        return new PagedList<Review> { Items = items, Page = 1, HasNext = hasNext };
+    }
 
-        var profiles = Substitute.For<IProfileService>();
-        profiles.IsFollowingAnyoneAsync("user-1").Returns(followsAnyone);
+    [Theory]
+    [InlineData("following", "Following")]
+    [InlineData("FOLLOWING", "Following")]
+    [InlineData("new", "NewReleases")]
+    public async Task Index_OldTabLinks_RedirectToTheirSeeAllPage(string tab, string expectedAction)
+    {
+        var controller = MakeHomeController(EmptyReviewService(), Substitute.For<IProfileService>(), "user-1");
 
-        var model = await IndexModelAsync(MakeHomeController(reviews, profiles, "user-1"), tab);
+        var redirect = Assert.IsType<RedirectToActionResult>(await controller.Index(tab));
 
-        Assert.Equal(expectFollowing, model.ShowingFollowing);
-        Assert.Equal(followsAnyone, model.FollowsAnyone);
+        Assert.Equal(expectedAction, redirect.ActionName);
     }
 
     [Fact]
-    public async Task Index_NewReleasesTab_NeverQueriesTheFollowingFeed()
+    public async Task Index_FollowingNobody_SkipsTheFriendsFeed()
     {
-        var reviews = Substitute.For<IReviewService>();
-        reviews.GetSongStatsAsync(Arg.Any<IEnumerable<string>>())
-            .Returns(new Dictionary<string, SongReviewStats>());
+        var reviews = EmptyReviewService();
+        var profiles = Substitute.For<IProfileService>();
+        profiles.IsFollowingAnyoneAsync("user-1").Returns(false);
 
+        var model = await IndexModelAsync(MakeHomeController(reviews, profiles, "user-1"));
+
+        Assert.False(model.FollowsAnyone);
+        Assert.Empty(model.FriendReviews);
+        await reviews.DidNotReceive().GetFollowingFeedAsync(Arg.Any<string>(), Arg.Any<int>());
+    }
+
+    [Theory]
+    [InlineData(3, false, 3, false)]   // fits in the preview: no See all
+    [InlineData(6, false, 4, true)]    // more on this page than the preview shows
+    [InlineData(4, true, 4, true)]     // exactly a preview's worth, but older pages exist
+    public async Task Index_PreviewsFriendReviews(int onPage, bool hasNext, int expectedShown, bool expectMore)
+    {
+        var reviews = EmptyReviewService();
+        reviews.GetFollowingFeedAsync("user-1", Arg.Any<int>()).Returns(PageOf(onPage, hasNext));
         var profiles = Substitute.For<IProfileService>();
         profiles.IsFollowingAnyoneAsync("user-1").Returns(true);
 
-        var model = await IndexModelAsync(MakeHomeController(reviews, profiles, "user-1"), "new");
+        var model = await IndexModelAsync(MakeHomeController(reviews, profiles, "user-1"));
 
-        Assert.False(model.ShowingFollowing);
-        await reviews.DidNotReceive().GetFollowingFeedAsync(Arg.Any<string>(), Arg.Any<int>());
+        Assert.Equal(expectedShown, model.FriendReviews.Count);
+        Assert.Equal(expectMore, model.MoreFriendReviews);
+    }
+
+    [Fact]
+    public async Task Index_SpotifyDown_StillRendersTheOtherSections()
+    {
+        var reviews = EmptyReviewService();
+        reviews.GetRecentReviewsAsync(Arg.Any<int>()).Returns(PageOf(7));
+        var controller = MakeHomeController(reviews, Substitute.For<IProfileService>(), "user-1", spotifyDown: true);
+
+        var model = await IndexModelAsync(controller);
+
+        Assert.True(model.SpotifyUnavailable);
+        Assert.Empty(model.NewReleases);
+        Assert.Equal(5, model.LatestReviews.Count);
+    }
+
+    [Fact]
+    public async Task Index_CapsTheNewReleasesShelf_AndBatchesLikeStatsOnce()
+    {
+        var reviews = EmptyReviewService();
+        reviews.GetRecentReviewsAsync(Arg.Any<int>()).Returns(PageOf(3));
+        var releases = Enumerable.Range(0, 20)
+            .Select(i => new TrackSummary($"t{i}", $"Track {i}", "Artist", $"https://img/{i}"))
+            .ToList();
+
+        var model = await IndexModelAsync(
+            MakeHomeController(reviews, Substitute.For<IProfileService>(), "user-1", releases));
+
+        Assert.Equal(8, model.NewReleases.Count);
+        Assert.Equal("https://img/0", model.NewReleases[0].ImageUrl);
+        await reviews.Received(1).GetLikeStatsAsync(Arg.Any<IEnumerable<string>>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task Following_EmptyForSomeoneWhoFollowsNobody_SaysHowToStart()
+    {
+        var profiles = Substitute.For<IProfileService>();
+        profiles.IsFollowingAnyoneAsync("user-1").Returns(false);
+        var controller = MakeHomeController(EmptyReviewService(), profiles, "user-1");
+
+        var view = Assert.IsType<ViewResult>(await controller.Following());
+        var model = Assert.IsType<ReviewFeedViewModel>(view.Model);
+
+        Assert.Equal("ReviewFeed", view.ViewName);
+        Assert.Contains("not following anyone", model.EmptyMessage);
     }
 }

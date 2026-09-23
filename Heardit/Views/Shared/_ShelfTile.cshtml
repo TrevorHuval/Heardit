@@ -1,0 +1,28 @@
+@model ShelfTileViewModel
+@{
+    var credit = string.IsNullOrWhiteSpace(Model.Artist) ? Model.Title : $"{Model.Title} by {Model.Artist}";
+}
+
+<a class="shelf-tile" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Id" title="@credit">
+    <span class="shelf-tile__art-wrap">
+        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+        {
+            <img class="shelf-tile__art" src="@Model.ImageUrl" alt="" loading="lazy" decoding="async" width="300" height="300" />
+        }
+        else
+        {
+            <span class="shelf-tile__art shelf-tile__art--blank" aria-hidden="true"></span>
+        }
+        @if (Model.Average != null)
+        {
+            <span class="shelf-tile__score score score--mini" title="Average @Model.Average out of 10 from @Model.ReviewCount @(Model.ReviewCount == 1 ? "review" : "reviews")">
+                <span class="score__value">@Model.Average</span><span class="score__scale">/10</span>
+            </span>
+        }
+    </span>
+    <span class="shelf-tile__title">@Model.Title</span>
+    @if (!string.IsNullOrWhiteSpace(Model.Artist))
+    {
+        <span class="shelf-tile__artist">@Model.Artist</span>
+    }
+</a>

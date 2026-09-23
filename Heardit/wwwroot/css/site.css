@@ -1962,3 +1962,190 @@ textarea.form-control {
         transform: none;
     }
 }
+
+/* ==========================================================================
+   Homepage dashboard: stacked sections, each a preview with a "See all"
+   ========================================================================== */
+.home {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+}
+.home-section {
+    min-width: 0;
+}
+.section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+.section-head__text {
+    min-width: 0;
+}
+.section-head .section-title {
+    margin: 0;
+}
+.section-head__sub {
+    margin: var(--space-1) 0 0;
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+}
+.section-head__all {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    white-space: nowrap;
+    transition: color var(--dur-2) var(--ease), background-color var(--dur-2) var(--ease);
+}
+.section-head__all:hover {
+    color: var(--text-1);
+    background: var(--surface-2);
+}
+.section-head__all svg {
+    transition: transform var(--dur-2) var(--ease);
+}
+.section-head__all:hover svg {
+    transform: translateX(2px);
+}
+
+/* Shelf: a single row of album tiles that scrolls sideways. Six fit on desktop with the
+   rest a swipe away; about two and a half show on a phone so the overflow is obvious. */
+.shelf {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - 2 * var(--space-3)) / 2.4);
+    gap: var(--space-3);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+    padding-bottom: var(--space-2);
+    margin: 0;
+    list-style: none;
+}
+@media (min-width: 640px) {
+    .shelf { grid-auto-columns: calc((100% - 3 * var(--space-3)) / 4); }
+}
+@media (min-width: 900px) {
+    .shelf { grid-auto-columns: calc((100% - 5 * var(--space-3)) / 6); }
+}
+.shelf__item {
+    min-width: 0;
+    scroll-snap-align: start;
+}
+.shelf-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    color: var(--text-1);
+    text-decoration: none;
+}
+.shelf-tile:hover {
+    color: var(--text-1);
+}
+.shelf-tile:focus-visible {
+    outline: none;
+}
+.shelf-tile__art-wrap {
+    position: relative;
+    display: block;
+    margin-bottom: var(--space-2);
+}
+.shelf-tile__art {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-1);
+    background: var(--surface-2);
+    transition: border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+.shelf-tile__art--blank {
+    background: linear-gradient(135deg, var(--surface-3), var(--control-bg));
+}
+.shelf-tile:hover .shelf-tile__art {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+}
+.shelf-tile:focus-visible .shelf-tile__art {
+    box-shadow: 0 0 0 3px var(--brand-soft);
+    border-color: var(--brand-ring);
+}
+.shelf-tile__score {
+    position: absolute;
+    left: var(--space-2);
+    bottom: var(--space-2);
+    padding: 2px 6px;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(6px);
+}
+.shelf-tile__title,
+.shelf-tile__artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.shelf-tile__title {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+}
+.shelf-tile__artist {
+    color: var(--text-3);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+/* Friends section before you follow anyone: a nudge, not an empty box. */
+.prompt-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-1);
+    background:
+        radial-gradient(120% 140% at 0% 0%, var(--brand-soft), transparent 60%),
+        var(--surface-1);
+}
+.prompt-card__text {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--text-2);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+}
+
+/* "‹ Home" above the See-all pages. */
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-bottom: var(--space-3);
+    color: var(--text-3);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    transition: color var(--dur-2) var(--ease);
+}
+.back-link:hover {
+    color: var(--text-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shelf-tile:hover .shelf-tile__art,
+    .section-head__all:hover svg { transform: none; }
+}

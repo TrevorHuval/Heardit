@@ -4,11 +4,13 @@ Letterboxd for music — rate tracks, follow people, keep a listen-later queue.
 
 ## what it does
 
-Search Spotify's catalog for a track, or browse new releases on the home page. Rate a track
-1–10 and write a review; reviewing the same track again edits the review you already wrote.
+Search Spotify's catalog for a track, or start from the home page. Rate a track 1–10 and write
+a review; reviewing the same track again edits the review you already wrote.
 
-Follow other listeners and the home page grows a Following tab: their reviews, newest first.
-Like a review from anywhere it appears. Save tracks to a listen-later queue from a feed card or
+The home page stacks four previews, each with a "See all" page behind it: the latest reviews from
+people you follow, what's trending on Heardit this week (reviews plus likes, falling back to
+all-time while the site is quiet), this fortnight's biggest new releases on Spotify, and the
+latest reviews from everyone. Like a review from anywhere it appears. Save tracks to a listen-later queue from a feed card or
 from the track page. Profiles carry a bio, up to four favorite tracks, and everything the person
 has reviewed. Search matches usernames as well as tracks, so it doubles as the way to find people.
 
@@ -110,9 +112,11 @@ configuration, the sub-path setup, and running behind a TLS-terminating reverse 
 
 - **No password recovery.** Nothing here sends email, so the reset flow is gone rather than
   broken. A forgotten password can only be reset by whoever has database access.
-- **The home page's new-releases feed uses Spotify endpoints the SDK marks obsolete**
-  (`Browse.GetNewReleases`, `Albums.GetSeveral`). They still work; if the home feed empties out or
-  starts failing, that is the first place to look.
+- **New releases lean on Spotify endpoints the SDK marks removed.** Spotify's own
+  `/browse/new-releases` froze in April 2024, so the feed searches `tag:new` instead and ranks the
+  results by each lead artist's popularity (`GET /artists`), then reads lead tracks with
+  `GET /albums`. If the artist lookup disappears the feed keeps working, just unranked; if the shelf
+  empties out or fills with obscure releases, that is the first place to look.
 - **An account is required for everything** — no public profiles, no shareable review links.
 - **Favorites cannot be reordered.** Removing one frees its slot and the next favorite fills it.
 - **The listen-later queue is private** and has no way to share or export it.
