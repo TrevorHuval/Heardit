@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Heardit.Controllers;
 using Heardit.Models;
 using Heardit.Options;
 using Heardit.Services;
@@ -192,9 +193,15 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+    options.Filters.Add<AntiforgeryFailureFilter>();
 });
-// Razor Pages (the account pages) validate antiforgery on every POST by default.
-builder.Services.AddRazorPages();
+// Razor Pages (the account pages) validate antiforgery on every POST by default. A failed check becomes
+// a redirect with a note instead of a bare 400 (AntiforgeryFailureFilter).
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.ConfigureFilter(new Microsoft.AspNetCore.Mvc.ServiceFilterAttribute(typeof(AntiforgeryFailureFilter)));
+});
+builder.Services.AddScoped<AntiforgeryFailureFilter>();
 
 // Behind a TLS-terminating reverse proxy (Caddy/nginx), trust X-Forwarded-For/Proto so that
 // HTTPS redirection, HSTS, and secure-cookie logic see the original scheme and client IP.

@@ -29,7 +29,7 @@
         <div class="profile__action">
             @if (IsCurrentUser)
             {
-                <a id="manage" class="btn btn-ghost" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Edit profile</a>
+                <a id="manage" class="btn btn-ghost" asp-area="" asp-controller="Settings" asp-action="Index">Edit profile</a>
             }
             else
             {

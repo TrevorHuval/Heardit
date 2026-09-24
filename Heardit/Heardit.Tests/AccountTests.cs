@@ -308,3 +308,72 @@ public class AccountEmailsTests
             Arg.Any<CancellationToken>());
     }
 }
+
+public class AntiforgeryFailureFilterTests
+{
+    private static (ResultExecutingContext Context, ITempDataDictionary TempData) Failed(string path, bool signedIn, string? referer = null, string query = "")
+    {
+        var http = new DefaultHttpContext();
+        http.Request.Path = path;
+        http.Request.QueryString = new QueryString(query);
+        http.Request.Host = new HostString("trevorhuval.com");
+        if (referer != null)
+        {
+            http.Request.Headers.Referer = referer;
+        }
+        http.User = signedIn
+            ? new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "u1") }, "test"))
+            : new ClaimsPrincipal(new ClaimsIdentity());
+
+        var tempData = new TempDataDictionary(http, Substitute.For<ITempDataProvider>());
+        var factory = Substitute.For<ITempDataDictionaryFactory>();
+        factory.GetTempData(http).Returns(tempData);
+
+        var action = new ActionContext(http, new RouteData(), new ActionDescriptor());
+        var context = new ResultExecutingContext(action, new List<IFilterMetadata>(),
+            new Microsoft.AspNetCore.Mvc.AntiforgeryValidationFailedResult(), controller: new object());
+
+        new AntiforgeryFailureFilter(factory, Microsoft.Extensions.Logging.Abstractions.NullLogger<AntiforgeryFailureFilter>.Instance)
+            .OnResultExecuting(context);
+        return (context, tempData);
+    }
+
+    [Fact]
+    public void LoggingInWhenAlreadySignedIn_GoesStraightToTheDestination()
+    {
+        var (context, tempData) = Failed("/Identity/Account/Login", signedIn: true, query: "?returnUrl=%2Fheardit%2FSettings");
+
+        Assert.Equal("/heardit/Settings", Assert.IsType<LocalRedirectResult>(context.Result).Url);
+        Assert.False(tempData.ContainsKey("FlashError"));
+    }
+
+    [Fact]
+    public void AStaleFormElsewhere_ReturnsToThePageItWasOn_WithANote()
+    {
+        var (context, tempData) = Failed("/Review/ToggleLike", signedIn: true, referer: "https://trevorhuval.com/heardit/Songs?songId=abc");
+
+        Assert.Equal("/heardit/Songs?songId=abc", Assert.IsType<LocalRedirectResult>(context.Result).Url);
+        Assert.Contains("out of date", (string)tempData["FlashError"]!);
+    }
+
+    [Fact]
+    public void AnOffSiteReferrer_IsIgnored()
+    {
+        var (context, _) = Failed("/Review/ToggleLike", signedIn: true, referer: "https://evil.example/heardit/x");
+
+        Assert.Equal("~/", Assert.IsType<LocalRedirectResult>(context.Result).Url);
+    }
+
+    [Fact]
+    public void OtherResults_AreLeftAlone()
+    {
+        var http = new DefaultHttpContext();
+        var context = new ResultExecutingContext(new ActionContext(http, new RouteData(), new ActionDescriptor()),
+            new List<IFilterMetadata>(), new OkResult(), controller: new object());
+
+        new AntiforgeryFailureFilter(Substitute.For<ITempDataDictionaryFactory>(),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<AntiforgeryFailureFilter>.Instance).OnResultExecuting(context);
+
+        Assert.IsType<OkResult>(context.Result);
+    }
+}
