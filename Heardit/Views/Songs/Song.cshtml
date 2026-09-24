@@ -90,6 +90,15 @@
             </div>
         }
 
+        @if (!Heardit.Areas.Identity.Data.HearditClaims.CanPostReviews(User))
+        {
+            <div class="prompt-card">
+                <p class="prompt-card__text">Confirm your email to rate this track. The link is in your inbox, or send a fresh one from Settings.</p>
+                <a class="btn btn-ghost btn-sm" asp-controller="Settings" asp-action="Index">Settings</a>
+            </div>
+        }
+        else
+        {
         <form class="composer" id="composer" asp-action="SubmitReview" asp-controller="Songs" asp-route-songId="@Model.Song.Id" method="post" hidden="@editing">
             <h2 class="composer__title">@(editing ? "Edit your review" : "Rate this track")</h2>
             <div class="rating-field">
@@ -112,6 +121,7 @@
                 <button class="btn btn-primary" id="postReview" type="submit" disabled="@(!editing)">@(editing ? "Update review" : "Post review")</button>
             </div>
         </form>
+        }
 
         <section class="song__reviews">
             <div class="reviews-head">

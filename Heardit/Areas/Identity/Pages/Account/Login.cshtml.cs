@@ -1,143 +1,134 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Heardit.Areas.Identity.Data;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Heardit.Areas.Identity.Pages.Account
 {
     [AllowAnonymous]
+    [EnableRateLimiting("account")]
     public class LoginModel : PageModel
     {
         private readonly SignInManager<HearditUser> _signInManager;
+        private readonly UserManager<HearditUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<HearditUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(SignInManager<HearditUser> signInManager, UserManager<HearditUser> userManager, ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
+        public ExternalLoginsViewModel Providers { get; private set; } = new(Array.Empty<AuthenticationScheme>(), null);
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public string ReturnUrl { get; set; }
+        public string? ReturnUrl { get; private set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        [TempData]
-        public string ErrorMessage { get; set; }
+        /// <summary>Set by the Google flow when it sends someone back here with a problem.</summary>
+        [TempData(Key = "LoginError")]
+        public string? ErrorMessage { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [MinLength(4, ErrorMessage = "Username must be longer than 3 characters")]
-            [DataType(DataType.Text)]
-            [Display(Name = "Username")]
-            public string UserName { get; set; }
+            [Required(ErrorMessage = "Enter your username or email.")]
+            [Display(Name = "Username or email")]
+            public string Login { get; set; } = string.Empty;
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
+            [Required(ErrorMessage = "Enter your password.")]
             [DataType(DataType.Password)]
-            public string Password { get; set; }
+            public string Password { get; set; } = string.Empty;
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Display(Name = "Remember me?")]
-            public bool RememberMe { get; set; }
+            [Display(Name = "Keep me signed in")]
+            public bool RememberMe { get; set; } = true;
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return LocalRedirect(SafeReturnUrl(returnUrl));
+            }
+
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
 
-            returnUrl ??= Url.Content("~/");
-
-            // Clear the existing external cookie to ensure a clean login process
+            // Start clean: a half-finished Google sign-in must not leak into this one.
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
-            ReturnUrl = returnUrl;
-        }
-
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-        {
-            returnUrl ??= Url.Content("~/");
-
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
-            if (ModelState.IsValid)
-            {
-                // Count failures toward account lockout to slow brute-force attempts.
-                var result = await _signInManager.PasswordSignInAsync(Input.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: true);
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User logged in.");
-                    return LocalRedirect(returnUrl);
-                }
-                if (result.RequiresTwoFactor)
-                {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-                }
-                if (result.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    return RedirectToPage("./Lockout");
-                }
-                else
-                {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                    return Page();
-                }
-            }
-
-            // If we got this far, something failed, redisplay form
+            await LoadAsync(returnUrl);
             return Page();
         }
+
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
+        {
+            await LoadAsync(returnUrl);
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            var user = await FindUserAsync(Input.Login.Trim());
+            if (user == null)
+            {
+                ModelState.AddModelError(string.Empty, "That username or email and password don't match.");
+                return Page();
+            }
+
+            // Failures count toward a short lockout to slow down password guessing.
+            var result = await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("User logged in.");
+                return LocalRedirect(SafeReturnUrl(returnUrl));
+            }
+
+            if (result.IsLockedOut)
+            {
+                _logger.LogWarning("User account locked out.");
+                return RedirectToPage("./Lockout");
+            }
+
+            ModelState.AddModelError(string.Empty, await _userManager.HasPasswordAsync(user)
+                ? "That username or email and password don't match."
+                : "This account signs in with Google. Use the button above.");
+            return Page();
+        }
+
+        /// <summary>By username, or by email when it looks like one. Usernames can't contain '@'.</summary>
+        private async Task<HearditUser?> FindUserAsync(string login)
+        {
+            if (!login.Contains('@'))
+            {
+                return await _userManager.FindByNameAsync(login);
+            }
+
+            try
+            {
+                return await _userManager.FindByEmailAsync(login);
+            }
+            catch (InvalidOperationException)
+            {
+                // Accounts from before emails had to be unique can share one; the username still works.
+                return null;
+            }
+        }
+
+        private async Task LoadAsync(string? returnUrl)
+        {
+            ReturnUrl = returnUrl;
+            Providers = new ExternalLoginsViewModel(
+                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), returnUrl);
+        }
+
+        private string SafeReturnUrl(string? returnUrl) =>
+            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Content("~/");
     }
 }

@@ -1,0 +1,52 @@
+@page
+@model ConfirmEmailModel
+@{
+    ViewData["Title"] = Model.Succeeded ? "Email confirmed" : "Confirmation link";
+}
+
+<div class="auth">
+    <div class="auth__card">
+        @if (Model.Succeeded)
+        {
+            <div class="auth__head">
+                <span class="auth__badge" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </span>
+                <h1 class="auth__title">@(Model.WasChange ? "New email confirmed" : "You're verified")</h1>
+                <p class="auth__sub">
+                    @if (Model.WasChange)
+                    {
+                        <text><strong>@Model.Email</strong> is now the email on your account.</text>
+                    }
+                    else
+                    {
+                        <text>Thanks for confirming <strong>@Model.Email</strong>. Go rate something.</text>
+                    }
+                </p>
+            </div>
+            <div class="form-actions is-center">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="btn btn-primary btn-lg" asp-area="" asp-controller="Home" asp-action="Index">Back to Heardit</a>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-lg" asp-page="./Login">Log in</a>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="auth__head">
+                <h1 class="auth__title">That link doesn't work</h1>
+                <p class="auth__sub">
+                    It may have expired or already been replaced by a newer one. Send a fresh link from Settings
+                    and use the newest email.
+                </p>
+            </div>
+            <div class="form-actions is-center">
+                <a class="btn btn-primary btn-lg" asp-area="" asp-controller="Settings" asp-action="Index">Go to Settings</a>
+            </div>
+        }
+    </div>
+</div>

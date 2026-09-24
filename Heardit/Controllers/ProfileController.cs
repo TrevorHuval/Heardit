@@ -80,6 +80,7 @@ namespace Heardit.Controllers
         }
 
         [HttpPost]
+        [RequireVerifiedEmail]
         public async Task<IActionResult> Follow(string userId)
         {
             var username = await _profileService.FollowAsync(userId, User.GetLoggedInUserId<string>());

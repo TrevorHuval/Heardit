@@ -32,7 +32,7 @@
         <div class="review__meta">
             <a class="review__song" asp-controller="Songs" asp-action="Index" asp-route-songId="@Model.Review.SongId">@Model.Review.SongName</a>
             <span class="review__by">
-                by <a asp-controller="Profile" asp-action="Index" asp-route-username="@Model.Review.User.UserName">@Model.Review.User.UserName</a>
+                by <a class="review__author" asp-controller="Profile" asp-action="Index" asp-route-username="@Model.Review.User.UserName"><partial name="_Avatar" model="@AvatarViewModel.For(Model.Review.User, "xxs")" />@Model.Review.User.UserName</a>
                 <span class="review__time">· @TimeAgo(createdUtc)</span>
                 @if (Model.Review.UpdatedAt != null)
                 {

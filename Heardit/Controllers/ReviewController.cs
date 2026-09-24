@@ -29,6 +29,7 @@ namespace Heardit.Controllers
         }
 
         [HttpPost]
+        [RequireVerifiedEmail]
         public async Task<IActionResult> ToggleLike(string reviewId, string? returnUrl)
         {
             var liked = await _reviewService.ToggleLikeAsync(reviewId, User.GetLoggedInUserId<string>());

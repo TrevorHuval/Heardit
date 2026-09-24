@@ -169,6 +169,45 @@
         });
     }
 
+    // ----- Show / hide password ----------------------------------------------
+    function initReveal(button) {
+        var input = button.parentElement && button.parentElement.querySelector('input');
+        if (!input) return;
+        button.setAttribute('aria-label', 'Show password');
+        button.addEventListener('click', function () {
+            var showing = input.type === 'text';
+            input.type = showing ? 'password' : 'text';
+            button.textContent = showing ? 'Show' : 'Hide';
+            button.setAttribute('aria-pressed', showing ? 'false' : 'true');
+            button.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+            input.focus();
+        });
+    }
+
+    // ----- Account menu ------------------------------------------------------
+    // A native <details>; this only closes it on an outside click or Escape.
+    function initMenu(menu) {
+        document.addEventListener('click', function (e) {
+            if (menu.open && !menu.contains(e.target)) menu.open = false;
+        });
+        menu.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && menu.open) {
+                menu.open = false;
+                menu.querySelector('summary').focus();
+            }
+        });
+    }
+
+    // ----- Upload on pick ----------------------------------------------------
+    // The photo form submits as soon as a file is chosen (a no-JS Save button covers the rest).
+    function initAutosubmit(form) {
+        var file = form.querySelector('input[type="file"]');
+        if (!file) return;
+        file.addEventListener('change', function () {
+            if (file.files && file.files.length) form.submit();
+        });
+    }
+
     // ----- Dismissible flash message -----------------------------------------
     function initFlash(flash) {
         var close = flash.querySelector('[data-flash-close]');
@@ -184,4 +223,7 @@
     initSort();
     document.querySelectorAll('[data-embed-track]').forEach(initCover);
     document.querySelectorAll('[data-flash]').forEach(initFlash);
+    document.querySelectorAll('[data-reveal]').forEach(initReveal);
+    document.querySelectorAll('[data-menu]').forEach(initMenu);
+    document.querySelectorAll('[data-autosubmit]').forEach(initAutosubmit);
 })();

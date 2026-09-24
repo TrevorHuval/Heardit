@@ -1,0 +1,18 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@{
+    ViewData["Title"] = "Not allowed";
+    HttpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+}
+
+<div class="auth">
+    <div class="auth__card">
+        <div class="auth__head">
+            <h1 class="auth__title">You can't open that</h1>
+            <p class="auth__sub">Your account doesn't have access to this page.</p>
+        </div>
+        <div class="form-actions is-center">
+            <a class="btn btn-primary btn-lg" asp-area="" asp-controller="Home" asp-action="Index">Back to Heardit</a>
+        </div>
+    </div>
+</div>

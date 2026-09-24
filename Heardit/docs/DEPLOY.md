@@ -18,6 +18,11 @@ are needed per environment. Double underscores (`__`) map to nested configuratio
 | `DataProtection__KeyPath` | no | Directory for the data-protection key ring. `appsettings.Production.json` sets `/data/keys`; mount a volume there. |
 | `AllowedHosts` | no | Host header allow-list, e.g. `example.com;www.example.com`. Defaults to `*`. |
 | `ASPNETCORE_ENVIRONMENT` | no | `Production` (the container default) enables HSTS, friendly error pages, quieter logs and the key path above. |
+| `Email__Host` | for email | SMTP host, e.g. `email-smtp.us-east-1.amazonaws.com`. Unset means no email: sign-up still works, but verification and password-reset links can't be sent. In Development the links are printed to the console instead. |
+| `Email__Port` | no | Defaults to `587` (STARTTLS). |
+| `Email__Username` / `Email__Password` | for email | SES **SMTP** credentials (not your AWS access keys; see below). |
+| `Email__From` | for email | Sender, e.g. `noreply@trevorhuval.com`. Must be a verified SES identity. |
+| `Authentication__Google__ClientId` / `__ClientSecret` | no | Turns on "Continue with Google". Without both, the button doesn't appear. |
 
 The app validates the Spotify options at startup and will refuse to boot if either is missing.
 `GET /healthz` answers `Healthy` without a login and without needing a forwarded scheme, for
@@ -73,6 +78,37 @@ To ship a change: push to `master`, wait for CI, then run `./scripts/deploy.sh` 
 
 To try the sub-path setup locally, `dotnet run --launch-profile http-pathbase` serves the app
 at `http://localhost:5047/heardit/`.
+
+## Account email with Amazon SES
+
+1. **Verify the domain.** In the SES console (pick one region and stay in it, e.g. us-east-1), go to
+   **Configuration → Identities → Create identity → Domain**, enter `trevorhuval.com`, keep Easy DKIM
+   (RSA 2048). SES shows three CNAME records; add them at your DNS host. Verification takes minutes
+   to a few hours.
+2. **Get SMTP credentials.** **SMTP settings → Create SMTP credentials.** This makes an IAM user
+   and shows an SMTP username and password once. Those go in `Email__Username` / `Email__Password`.
+   The endpoint on the same page goes in `Email__Host`.
+3. **Leave the sandbox.** New SES accounts can only send to verified addresses. **Account dashboard →
+   Request production access**: transactional mail, account verification and password resets, a few
+   a day. Approval usually takes about a day. Until then, verify your own address under Identities to
+   test with it.
+4. Optional but recommended: add a DMARC record, `_dmarc.trevorhuval.com TXT "v=DMARC1; p=none;"`,
+   so mail providers trust the DKIM-signed messages.
+
+## Sign in with Google
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project (or reuse one).
+2. **APIs & Services → OAuth consent screen**: External, app name "Heardit", your support email,
+   scopes `openid`, `email`, `profile` (all non-sensitive, so no Google review is needed). Publish it.
+3. **Credentials → Create credentials → OAuth client ID → Web application.**
+   Authorised redirect URIs:
+   - `https://trevorhuval.com/heardit/signin-google` (production)
+   - `http://localhost:5046/signin-google` (optional, for local testing)
+4. Put the client ID and secret in `Authentication__Google__ClientId` / `__ClientSecret`.
+
+A Google account links to an existing Heardit account on its own only when both sides have verified
+the same email. Otherwise the person is asked to log in with their password and connect Google from
+Settings, so nobody can pre-register someone else's address and wait for them to sign in with Google.
 
 ## Running locally without Docker
 

@@ -1,190 +1,144 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-#nullable disable
-
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading;
-using System.Threading.Tasks;
+using Heardit.Areas.Identity.Data;
+using Heardit.Services;
+using Heardit.Services.Email;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
-using Heardit.Areas.Identity.Data;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Heardit.Areas.Identity.Pages.Account
 {
     [AllowAnonymous]
+    [EnableRateLimiting("account")]
     public class RegisterModel : PageModel
     {
         private readonly SignInManager<HearditUser> _signInManager;
         private readonly UserManager<HearditUser> _userManager;
-        private readonly IUserStore<HearditUser> _userStore;
-        private readonly IUserEmailStore<HearditUser> _emailStore;
+        private readonly IAccountEmails _emails;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
 
         public RegisterModel(
             UserManager<HearditUser> userManager,
-            IUserStore<HearditUser> userStore,
             SignInManager<HearditUser> signInManager,
-            ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IAccountEmails emails,
+            ILogger<RegisterModel> logger)
         {
             _userManager = userManager;
-            _userStore = userStore;
-            _emailStore = GetEmailStore();
             _signInManager = signInManager;
+            _emails = emails;
             _logger = logger;
-            _emailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
-        public InputModel Input { get; set; }
+        public InputModel Input { get; set; } = new();
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public string ReturnUrl { get; set; }
+        public ExternalLoginsViewModel Providers { get; private set; } = new(Array.Empty<AuthenticationScheme>(), null);
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
-        public IList<AuthenticationScheme> ExternalLogins { get; set; }
+        public string? ReturnUrl { get; private set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-
-            [Required]
-            [MinLength(4, ErrorMessage = "Username must be longer than 3 characters")]
-            [DataType(DataType.Text)]
+            [Required(ErrorMessage = "Pick a username.")]
+            [StringLength(UserNameRules.MaxLength, MinimumLength = UserNameRules.MinLength, ErrorMessage = UserNameRules.Hint)]
+            [RegularExpression(UserNameRules.Pattern, ErrorMessage = UserNameRules.Hint)]
             [Display(Name = "Username")]
-            public string UserName { get; set; }
+            public string UserName { get; set; } = string.Empty;
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [EmailAddress]
+            [Required(ErrorMessage = "Enter your email.")]
+            [EmailAddress(ErrorMessage = "That doesn't look like an email address.")]
+            [StringLength(254)]
             [Display(Name = "Email")]
-            public string Email { get; set; }
+            public string Email { get; set; } = string.Empty;
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [Required]
-            [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+            [Required(ErrorMessage = "Choose a password.")]
+            [StringLength(100, MinimumLength = 8, ErrorMessage = "Use at least 8 characters.")]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
-            public string Password { get; set; }
-
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
-            [DataType(DataType.Password)]
-            [Display(Name = "Confirm password")]
-            [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-            public string ConfirmPassword { get; set; }
+            public string Password { get; set; } = string.Empty;
         }
 
-
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task<IActionResult> OnGetAsync(string? returnUrl = null)
         {
-            ReturnUrl = returnUrl;
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-        }
-
-        public async Task<IActionResult> OnPostAsync(string returnUrl = null)
-        {
-            returnUrl ??= Url.Content("~/");
-            ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-            if (ModelState.IsValid)
+            if (User.Identity?.IsAuthenticated == true)
             {
-                var user = CreateUser();
-
-                user.UserName = Input.UserName;
-
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
-
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("User created a new account with password.");
-
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                    {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                    }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
-                }
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
+                return LocalRedirect(Url.Content("~/"));
             }
 
-            // If we got this far, something failed, redisplay form
+            await LoadAsync(returnUrl);
             return Page();
         }
 
-        private HearditUser CreateUser()
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
-            try
+            await LoadAsync(returnUrl);
+            if (!ModelState.IsValid)
             {
-                return Activator.CreateInstance<HearditUser>();
+                return Page();
             }
-            catch
+
+            var user = new HearditUser
             {
-                throw new InvalidOperationException($"Can't create an instance of '{nameof(HearditUser)}'. " +
-                    $"Ensure that '{nameof(HearditUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+                UserName = Input.UserName.Trim(),
+                Email = Input.Email.Trim(),
+                // New accounts confirm their email before they can post; see RequireVerifiedEmail.
+                MustVerifyEmail = true
+            };
+
+            var result = await _userManager.CreateAsync(user, Input.Password);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(FieldFor(error.Code), Friendly(error));
+                }
+
+                return Page();
             }
+
+            _logger.LogInformation("User created a new account with password.");
+            await _signInManager.SignInAsync(user, isPersistent: true);
+
+            var sent = await SendVerificationAsync(user);
+            TempData["Flash"] = sent
+                ? $"Welcome to Heardit! We sent a link to {user.Email}. Confirm it to start reviewing."
+                : "Welcome to Heardit! We couldn't send your confirmation email just now. You can resend it from Settings.";
+
+            var home = Url.Content("~/");
+            return LocalRedirect(!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : home);
         }
 
-        private IUserEmailStore<HearditUser> GetEmailStore()
+        private async Task<bool> SendVerificationAsync(HearditUser user)
         {
-            if (!_userManager.SupportsUserEmail)
-            {
-                throw new NotSupportedException("The default UI requires a user store with email support.");
-            }
-            return (IUserEmailStore<HearditUser>)_userStore;
+            var code = AccountTokens.Encode(await _userManager.GenerateEmailConfirmationTokenAsync(user));
+            var link = Url.Page("/Account/ConfirmEmail", null, new { area = "Identity", userId = user.Id, code }, Request.Scheme)!;
+            return await _emails.SendVerificationAsync(user.Email!, user.UserName!, link);
         }
+
+        private async Task LoadAsync(string? returnUrl)
+        {
+            ReturnUrl = returnUrl;
+            Providers = new ExternalLoginsViewModel(
+                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), returnUrl);
+        }
+
+        /// <summary>Put Identity's errors next to the field they're about.</summary>
+        private static string FieldFor(string code) => code switch
+        {
+            nameof(IdentityErrorDescriber.DuplicateUserName) or nameof(IdentityErrorDescriber.InvalidUserName) => "Input.UserName",
+            nameof(IdentityErrorDescriber.DuplicateEmail) or nameof(IdentityErrorDescriber.InvalidEmail) => "Input.Email",
+            _ when code.StartsWith("Password", StringComparison.Ordinal) => "Input.Password",
+            _ => string.Empty
+        };
+
+        private static string Friendly(IdentityError error) => error.Code switch
+        {
+            nameof(IdentityErrorDescriber.DuplicateUserName) => "That username is taken.",
+            nameof(IdentityErrorDescriber.DuplicateEmail) => "An account already uses that email. Log in instead, or reset your password.",
+            nameof(IdentityErrorDescriber.InvalidUserName) => UserNameRules.Hint,
+            _ => error.Description
+        };
     }
 }

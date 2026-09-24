@@ -8,6 +8,13 @@ services:
       ConnectionStrings__HearditDbContextConnection: "Host=db;Port=5432;Database=heardit;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Spotify__ClientId: "${Spotify__ClientId}"
       Spotify__ClientSecret: "${Spotify__ClientSecret}"
+      # Optional: account email (SES SMTP) and Sign in with Google. Blank values leave them off.
+      Email__Host: "${Email__Host:-}"
+      Email__Username: "${Email__Username:-}"
+      Email__Password: "${Email__Password:-}"
+      Email__From: "${Email__From:-}"
+      Authentication__Google__ClientId: "${Authentication__Google__ClientId:-}"
+      Authentication__Google__ClientSecret: "${Authentication__Google__ClientSecret:-}"
     volumes:
       - heardit-data:/data
     depends_on:

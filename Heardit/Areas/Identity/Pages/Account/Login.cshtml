@@ -1,6 +1,5 @@
 @page
 @model LoginModel
-
 @{
     ViewData["Title"] = "Log in";
 }
@@ -12,18 +11,26 @@
             <p class="auth__sub">Log in to rate tracks and follow other listeners.</p>
         </div>
 
-        <form id="account" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+        <partial name="_ExternalLogins" model="Model.Providers" />
+
+        <form id="account" method="post" asp-route-returnUrl="@Model.ReturnUrl">
+            <div asp-validation-summary="ModelOnly" class="form-error" role="alert"></div>
 
             <div class="field">
-                <label asp-for="Input.UserName" class="field__label"></label>
-                <input asp-for="Input.UserName" class="input" autocomplete="username" required minlength="4" placeholder="Your username" />
-                <span asp-validation-for="Input.UserName" class="field__error"></span>
+                <label asp-for="Input.Login" class="field__label"></label>
+                <input asp-for="Input.Login" class="input" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="you or you@example.com" />
+                <span asp-validation-for="Input.Login" class="field__error"></span>
             </div>
 
             <div class="field">
-                <label asp-for="Input.Password" class="field__label"></label>
-                <input asp-for="Input.Password" class="input" autocomplete="current-password" required placeholder="Your password" />
+                <div class="field__row">
+                    <label asp-for="Input.Password" class="field__label"></label>
+                    <a class="field__link" asp-page="./ForgotPassword">Forgot password?</a>
+                </div>
+                <div class="password">
+                    <input asp-for="Input.Password" class="input" autocomplete="current-password" required placeholder="Your password" />
+                    <button type="button" class="password__toggle" data-reveal aria-pressed="false">Show</button>
+                </div>
                 <span asp-validation-for="Input.Password" class="field__error"></span>
             </div>
 
@@ -37,7 +44,6 @@
             <button id="login-submit" type="submit" class="btn btn-primary btn-lg btn-block">Log in</button>
         </form>
 
-        @* No password reset: the app sends no email, so the flow would go nowhere (see /Home/Privacy). *@
         <div class="auth__foot">
             <span>New here? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Create an account</a></span>
         </div>

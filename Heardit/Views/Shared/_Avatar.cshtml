@@ -1,3 +1,11 @@
 @model AvatarViewModel
 
-<span class="avatar avatar--@Model.Size avatar--brand" aria-hidden="true">@Model.Initials</span>
+@if (Model.HasPhoto)
+{
+    <img class="avatar avatar--@Model.Size avatar--photo" src="@Url.Action("Photo", "Avatar", new { area = "", userId = Model.UserId, v = Model.Version })"
+         alt="" loading="lazy" decoding="async" width="256" height="256" />
+}
+else
+{
+    <span class="avatar avatar--@Model.Size avatar--brand" aria-hidden="true">@Model.Initials</span>
+}

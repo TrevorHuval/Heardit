@@ -1,0 +1,21 @@
+@page
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@{
+    ViewData["Title"] = "Too many attempts";
+}
+
+<div class="auth">
+    <div class="auth__card">
+        <div class="auth__head">
+            <h1 class="auth__title">Too many attempts</h1>
+            <p class="auth__sub">
+                That account is locked for 10 minutes after several wrong passwords. Wait a bit and try again,
+                or reset your password to get straight back in.
+            </p>
+        </div>
+        <div class="form-actions is-center">
+            <a class="btn btn-primary btn-lg" asp-page="./ForgotPassword">Reset password</a>
+            <a class="btn btn-ghost btn-lg" asp-page="./Login">Back to log in</a>
+        </div>
+    </div>
+</div>

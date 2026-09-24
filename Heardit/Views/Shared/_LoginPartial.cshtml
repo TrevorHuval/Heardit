@@ -1,24 +1,30 @@
-@using Microsoft.AspNetCore.Identity
 @using Heardit.Areas.Identity.Data
 
-@inject SignInManager<HearditUser> SignInManager
-@inject UserManager<HearditUser> UserManager
-
 <div class="nav-auth">
-@if (SignInManager.IsSignedIn(User))
+@if (User.Identity?.IsAuthenticated == true)
 {
-    var userName = UserManager.GetUserName(User);
-    <a id="manage" class="nav-user" asp-area="" asp-controller="Profile" asp-action="Index" asp-route-username="@userName" title="@userName">
-        <partial name="_Avatar" model="@(new AvatarViewModel(userName, "xs"))" />
-        <span class="nav-user__name">@userName</span>
-    </a>
-    <form id="logoutForm" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-        <button id="logout" type="submit" class="btn btn-ghost btn-sm">Log out</button>
-    </form>
+    var userName = User.Identity.Name;
+    @* A native disclosure: opens on click or Enter, works without JavaScript (site.js only adds
+       close-on-outside-click and Escape). *@
+    <details class="menu" data-menu>
+        <summary class="nav-user" aria-label="Account menu for @userName">
+            <partial name="_Avatar" model="@AvatarViewModel.ForSignedIn(User, userName)" />
+            <span class="nav-user__name">@userName</span>
+            <svg class="menu__chev" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </summary>
+        <div class="menu__panel">
+            <a class="menu__item" asp-area="" asp-controller="Profile" asp-action="Index" asp-route-username="@userName">Your profile</a>
+            <a class="menu__item" asp-area="" asp-controller="ListenLater" asp-action="Index">Queue</a>
+            <a class="menu__item" asp-area="" asp-controller="Settings" asp-action="Index">Settings</a>
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/Identity/Account/Login")" method="post">
+                <button type="submit" class="menu__item menu__item--button">Log out</button>
+            </form>
+        </div>
+    </details>
 }
 else
 {
-    <a class="btn btn-ghost btn-sm" id="register" asp-area="Identity" asp-page="/Account/Register">Register</a>
+    <a class="btn btn-ghost btn-sm" id="register" asp-area="Identity" asp-page="/Account/Register">Sign up</a>
     <a class="btn btn-primary btn-sm" id="login" asp-area="Identity" asp-page="/Account/Login">Log in</a>
 }
 </div>

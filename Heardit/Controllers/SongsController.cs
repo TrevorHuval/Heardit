@@ -55,6 +55,7 @@ namespace Heardit.Controllers
         }
 
         [HttpPost]
+        [RequireVerifiedEmail]
         public async Task<IActionResult> SubmitReview(ReviewInputModel input)
         {
             if (!ModelState.IsValid)

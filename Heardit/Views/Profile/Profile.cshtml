@@ -11,7 +11,7 @@
 
 <div class="profile">
     <header class="profile__banner">
-        <partial name="_Avatar" model="@(new AvatarViewModel(Model.User.UserName, "xl"))" />
+        <partial name="_Avatar" model="@(AvatarViewModel.For(Model.User, "xl"))" />
         <div class="profile__id">
             <p class="eyebrow">Listener</p>
             <h1 class="profile__name">@Model.User.UserName</h1>

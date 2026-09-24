@@ -1,41 +1,45 @@
 @page
 @model RegisterModel
+@using Heardit.Services
 @{
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Create your account";
 }
 
 <div class="auth">
     <div class="auth__card">
         <div class="auth__head">
             <h1 class="auth__title">Create your account</h1>
-            <p class="auth__sub">Join Heardit to rate tracks and build your review feed.</p>
+            <p class="auth__sub">Rate tracks, write reviews and follow other listeners.</p>
         </div>
 
+        <partial name="_ExternalLogins" model="Model.Providers" />
+
         <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+            <div asp-validation-summary="ModelOnly" class="form-error" role="alert"></div>
 
             <div class="field">
                 <label asp-for="Input.UserName" class="field__label"></label>
-                <input asp-for="Input.UserName" class="input" autocomplete="username" required minlength="4" placeholder="Pick a username" />
+                <input asp-for="Input.UserName" class="input" autocomplete="username" autocapitalize="none" spellcheck="false"
+                       required minlength="@UserNameRules.MinLength" maxlength="@UserNameRules.MaxLength" pattern="[A-Za-z0-9._\-]+"
+                       placeholder="Pick a username" aria-describedby="usernameHint" />
+                <span class="field__hint" id="usernameHint">@UserNameRules.Hint It's your profile address.</span>
                 <span asp-validation-for="Input.UserName" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.Email" class="field__label"></label>
-                <input asp-for="Input.Email" class="input" autocomplete="email" required placeholder="you@example.com" />
+                <input asp-for="Input.Email" class="input" autocomplete="email" required placeholder="you@example.com" aria-describedby="emailHint" />
+                <span class="field__hint" id="emailHint">We'll send a link to confirm it. Never shown to anyone.</span>
                 <span asp-validation-for="Input.Email" class="field__error"></span>
             </div>
 
             <div class="field">
                 <label asp-for="Input.Password" class="field__label"></label>
-                <input asp-for="Input.Password" class="input" autocomplete="new-password" required minlength="6" maxlength="100" placeholder="Create a password" />
+                <div class="password">
+                    <input asp-for="Input.Password" class="input" autocomplete="new-password" required minlength="8" maxlength="100" placeholder="At least 8 characters" />
+                    <button type="button" class="password__toggle" data-reveal aria-pressed="false">Show</button>
+                </div>
                 <span asp-validation-for="Input.Password" class="field__error"></span>
-            </div>
-
-            <div class="field">
-                <label asp-for="Input.ConfirmPassword" class="field__label"></label>
-                <input asp-for="Input.ConfirmPassword" class="input" autocomplete="new-password" required placeholder="Re-enter your password" />
-                <span asp-validation-for="Input.ConfirmPassword" class="field__error"></span>
             </div>
 
             <button id="registerSubmit" type="submit" class="btn btn-primary btn-lg btn-block">Create account</button>

@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -7,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Heardit.Models;
 using Heardit.Options;
 using Heardit.Services;
+using Heardit.Services.Email;
+using Microsoft.AspNetCore.Identity;
 using Heardit.Areas.Identity.Data;
 using Microsoft.Extensions.Options;
 using SpotifyAPI.Web;
@@ -22,8 +25,34 @@ pathBase = string.IsNullOrWhiteSpace(pathBase) ? null : "/" + pathBase.Trim().Tr
 builder.Services.AddDbContext<HearditDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HearditDbContextConnection") ?? throw new InvalidOperationException("Connection string 'HearditDbContextConnection' not found.")));
 
-builder.Services.AddDefaultIdentity<HearditUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddEntityFrameworkStores<HearditDbContext>();
+// Identity without its default UI package: every account page is the app's own (Areas/Identity).
+builder.Services.AddIdentity<HearditUser, IdentityRole>(options =>
+    {
+        // Anyone can sign in; confirming the email is what unlocks posting (RequireVerifiedEmail).
+        options.SignIn.RequireConfirmedAccount = false;
+
+        // Profiles live at /Profile?username=..., and people sign in with a username or an email, so
+        // usernames stay URL-friendly and can never look like an email address.
+        options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-";
+        options.User.RequireUniqueEmail = true;
+
+        // Length over composition rules (NIST 800-63B): 8+ characters, no forced symbols or digits.
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = false;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredUniqueChars = 1;
+
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+
+        // What the old default-UI registration used; keeps the existing login/token key columns as they are.
+        options.Stores.MaxLengthForKeys = 128;
+    })
+    .AddEntityFrameworkStores<HearditDbContext>()
+    .AddDefaultTokenProviders()
+    .AddClaimsPrincipalFactory<HearditClaimsPrincipalFactory>();
 
 // Identity's default cookie name is the same in every ASP.NET app. Two of them on one domain
 // (this app and Plannit, say) would overwrite each other's login, so name and scope ours.
@@ -31,7 +60,50 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "Heardit.Auth";
     options.Cookie.Path = pathBase ?? "/";
+    options.LoginPath = "/Identity/Account/Login";
+    options.LogoutPath = "/Identity/Account/Logout";
+    options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
 });
+builder.Services.ConfigureExternalCookie(options =>
+{
+    options.Cookie.Name = "Heardit.External";
+    options.Cookie.Path = pathBase ?? "/";
+});
+
+// Sign in with Google appears only once both keys are configured (Authentication__Google__ClientId /
+// __ClientSecret). Its callback is /signin-google under the path base, e.g. /heardit/signin-google.
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
+{
+    builder.Services.AddAuthentication().AddGoogle(options =>
+    {
+        options.ClientId = googleClientId;
+        options.ClientSecret = googleClientSecret;
+        options.CorrelationCookie.Path = pathBase ?? "/";
+        // Google says whether it has verified the address; only a verified one may link to an account.
+        options.ClaimActions.MapJsonKey(ExternalAccounts.EmailVerifiedClaim, "verified_email");
+    });
+}
+
+// Outgoing email: SES over SMTP when configured; in development, links are printed to the console.
+builder.Services.AddOptions<EmailOptions>().BindConfiguration(EmailOptions.SectionName);
+var emailConfigured = builder.Configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()?.IsConfigured == true;
+if (emailConfigured)
+{
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+}
+else if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
+}
+else
+{
+    builder.Services.AddScoped<IEmailSender, DisabledEmailSender>();
+}
+builder.Services.AddScoped<IAccountEmails, AccountEmails>();
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = "Heardit.Antiforgery";
@@ -75,6 +147,7 @@ builder.Services.AddScoped<ISongService, SongService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IProfileService, ProfileService>();
 builder.Services.AddScoped<IListenLaterService, ListenLaterService>();
+builder.Services.AddScoped<IAvatarService, AvatarService>();
 
 // Require an authenticated user by default; opt out with [AllowAnonymous].
 builder.Services.AddAuthorization(options =>
@@ -99,6 +172,20 @@ builder.Services.AddRateLimiter(options =>
                 PermitLimit = 10,
                 QueueLimit = 0
             }));
+
+    // Anything that sends an email (sign-up, reset, resend, change) or checks a password. Only form
+    // posts count, per client IP, since most of these run before anyone is signed in.
+    options.AddPolicy("account", httpContext =>
+        HttpMethods.IsGet(httpContext.Request.Method) || HttpMethods.IsHead(httpContext.Request.Method)
+            ? RateLimitPartition.GetNoLimiter("reads")
+            : RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window = TimeSpan.FromMinutes(5),
+                PermitLimit = 20,
+                QueueLimit = 0
+            }));
 });
 
 // Add services to the container. Every unsafe (POST/PUT/DELETE) request is antiforgery-validated.
@@ -106,6 +193,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
+// Razor Pages (the account pages) validate antiforgery on every POST by default.
+builder.Services.AddRazorPages();
 
 // Behind a TLS-terminating reverse proxy (Caddy/nginx), trust X-Forwarded-For/Proto so that
 // HTTPS redirection, HSTS, and secure-cookie logic see the original scheme and client IP.
@@ -147,6 +236,8 @@ app.UseStatusCodePagesWithReExecute("/Home/Error");
 
 // Baseline security headers. CSP permits only the Spotify embeds the views use; the icon that
 // once required the remote Font Awesome kit is now an inline SVG, so no external font/script hosts.
+// form-action also allows Google: "Continue with Google" posts to this app, which redirects the form
+// on to accounts.google.com, and browsers apply form-action to that redirect too.
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
@@ -161,7 +252,7 @@ app.Use(async (context, next) =>
         "img-src 'self' data: https:; " +
         "connect-src 'self' https://*.spotify.com https://*.spotifycdn.com; " +
         "frame-src https://open.spotify.com https://*.spotify.com https://*.spotifycdn.com; " +
-        "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
+        "object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com; frame-ancestors 'self'";
     await next();
 });
 

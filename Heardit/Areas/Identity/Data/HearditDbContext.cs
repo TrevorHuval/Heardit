@@ -1,4 +1,4 @@
-﻿using Heardit.Models;
+using Heardit.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,6 +18,7 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
     public DbSet<Song> Songs { get; set; } = default!;
     public DbSet<ListenLater> ListenLater { get; set; } = default!;
     public DbSet<FavoriteTrack> FavoriteTracks { get; set; } = default!;
+    public DbSet<UserAvatar> UserAvatars { get; set; } = default!;
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -103,6 +104,14 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
         // Add your customizations after calling base.OnModelCreating(builder);
 
         builder.ApplyConfiguration(new ApplicationBuilderUserEntityConfiguration());
+
+        // One photo per user, keyed by the user; it goes when the account does.
+        builder.Entity<UserAvatar>().HasKey(a => a.UserId);
+        builder.Entity<UserAvatar>()
+            .HasOne(a => a.User)
+            .WithOne()
+            .HasForeignKey<UserAvatar>(a => a.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

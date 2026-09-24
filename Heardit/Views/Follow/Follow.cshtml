@@ -11,7 +11,7 @@
 
 <div class="follows">
     <header class="profile__banner">
-        <partial name="_Avatar" model="@(new AvatarViewModel(Model.User.UserName, "xl"))" />
+        <partial name="_Avatar" model="@(AvatarViewModel.For(Model.User, "xl"))" />
         <div class="profile__id">
             <p class="eyebrow">Listener</p>
             <h1 class="profile__name">@Model.User.UserName</h1>
@@ -63,7 +63,7 @@
                 @foreach (HearditUser user in Model.Listeners.Items)
                 {
                     <a class="user-row" asp-controller="Profile" asp-action="Index" asp-route-username="@user.UserName">
-                        <partial name="_Avatar" model="@(new AvatarViewModel(user.UserName))" />
+                        <partial name="_Avatar" model="@(AvatarViewModel.For(user))" />
                         <span class="user-row__name">@user.UserName</span>
                         <svg class="user-row__chev" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </a>

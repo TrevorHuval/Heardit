@@ -30,14 +30,22 @@
                 <input id="searchInput" type="text" class="search__input" name="SearchString" placeholder="Search tracks…" aria-label="Search tracks" autocomplete="off" required />
             </form>
 
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <a class="btn btn-ghost btn-sm nav-queue" asp-area="" asp-controller="ListenLater" asp-action="Index">Queue</a>
-            }
-
             <partial name="_LoginPartial" />
         </nav>
     </header>
+
+    @if (User.Identity?.IsAuthenticated == true && !Heardit.Areas.Identity.Data.HearditClaims.CanPostReviews(User))
+    {
+        @* New accounts confirm their email before they can post. The link can be resent from here. *@
+        <div class="verify-bar" role="status">
+            <div class="verify-bar__inner">
+                <span class="verify-bar__text"><strong>Confirm your email</strong> to start reviewing, liking and following. The link is in your inbox.</span>
+                <form asp-area="" asp-controller="Settings" asp-action="ResendVerification" method="post">
+                    <button type="submit" class="btn btn-ghost btn-sm">Resend link</button>
+                </form>
+            </div>
+        </div>
+    }
 
     <main role="main" class="page-main">
         @if (TempData["Flash"] is string flashMessage)

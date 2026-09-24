@@ -20,7 +20,9 @@ Every page is behind a login. There is no anonymous view.
 
 - ASP.NET Core 10 MVC with Razor views
 - PostgreSQL through EF Core (Npgsql); migrations run at startup
-- ASP.NET Core Identity for accounts
+- ASP.NET Core Identity for accounts, with the app's own account pages (no default Identity UI):
+  username-or-email login, email verification, password reset, Sign in with Google, profile photos
+- Amazon SES over SMTP for account email; SkiaSharp to crop and re-encode profile photos
 - SpotifyAPI.Web on the client-credentials flow — the app has its own Spotify app, it never
   connects to a listener's Spotify account
 - xUnit, NSubstitute, SQLite in-memory as the test provider
@@ -46,7 +48,9 @@ Controllers are thin — resolve the current user, call a service, hand a view m
   owns cascades when the account is deleted.
 - `ViewModels/` — one per page, plus `PagedList<T>`, which is the `?page=` pagination used by
   profiles, song pages, follow lists, the feed and the queue.
-- `Views/` — Razor views and shared partials. `Areas/Identity` is the scaffolded Identity UI.
+- `Views/` — Razor views and shared partials. `Areas/Identity/Pages/Account` holds every account
+  page (log in, sign up, Google, reset, confirm); `SettingsController` is the one place to manage an
+  account: photo, email, password, connected Google account, deletion.
 
 Track data flows one way: a Spotify id goes to `SpotifyService` for metadata (cached), and
 `SongService.GetOrCreateSongAsync` persists a minimal `Songs` row the first time someone reviews
@@ -110,8 +114,13 @@ configuration, the sub-path setup, and running behind a TLS-terminating reverse 
 
 ## known limitations
 
-- **No password recovery.** Nothing here sends email, so the reset flow is gone rather than
-  broken. A forgotten password can only be reset by whoever has database access.
+- **Email verification gates posting, not signing in.** New accounts can browse straight away but
+  must confirm their email before reviewing, liking or following. Accounts created before this shipped
+  are grandfathered (`MustVerifyEmail = false`) and only get a nudge; password reset still needs a
+  confirmed address. Without email configured (`Email__Host`), production can't send any of it.
+- **Google only.** Sign in with Apple needs a paid Apple Developer membership, so it isn't built. A
+  Google account links to an existing Heardit account automatically only when both have verified the
+  same email; otherwise the person signs in with their password and connects Google from Settings.
 - **New releases lean on Spotify endpoints the SDK marks removed.** Spotify's own
   `/browse/new-releases` froze in April 2024, so the feed searches `tag:new` instead and ranks the
   results by each lead artist's popularity (`GET /artists`), then reads lead tracks with

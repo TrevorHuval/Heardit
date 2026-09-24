@@ -1,0 +1,177 @@
+@model SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+    var user = Model.User;
+}
+
+<div class="settings">
+    <div class="feed__head">
+        <h1 class="feed__title">Settings</h1>
+        <p class="feed__sub">Your photo, sign-in details and account.</p>
+    </div>
+
+    <section class="settings__card" aria-labelledby="photo-title">
+        <h2 class="settings__title" id="photo-title">Profile photo</h2>
+        <div class="settings__photo">
+            <partial name="_Avatar" model="@AvatarViewModel.For(user, "xl")" />
+            <div class="settings__photo-body">
+                <p class="settings__hint">Shown on your profile, your reviews and in search. JPEG, PNG, WebP, GIF or HEIC up to 5 MB. We crop it to a square.</p>
+                <div class="settings__actions">
+                    <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" data-autosubmit>
+                        <label class="btn btn-primary btn-sm file-button">
+                            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/avif" required />
+                            @(user.AvatarVersion == null ? "Upload photo" : "Change photo")
+                        </label>
+                        <noscript><button type="submit" class="btn btn-ghost btn-sm">Save</button></noscript>
+                    </form>
+                    @if (user.AvatarVersion != null)
+                    {
+                        <form asp-action="RemovePhoto" method="post">
+                            <button type="submit" class="btn btn-ghost-danger btn-sm">Remove</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="settings__card" aria-labelledby="email-title">
+        <h2 class="settings__title" id="email-title">Email</h2>
+        <div class="settings__row">
+            <span class="settings__value">@user.Email</span>
+            @if (user.EmailConfirmed)
+            {
+                <span class="pill pill--ok">Confirmed</span>
+            }
+            else
+            {
+                <span class="pill pill--warn">Not confirmed</span>
+            }
+        </div>
+        @if (!user.EmailConfirmed)
+        {
+            <p class="settings__hint">
+                @(user.MustVerifyEmail
+                    ? "Confirm it to start reviewing, liking and following."
+                    : "Confirm it so you can reset your password if you ever forget it.")
+            </p>
+            <form asp-action="ResendVerification" method="post" class="settings__actions">
+                <button type="submit" class="btn btn-ghost btn-sm">Send confirmation link</button>
+            </form>
+        }
+
+        <details class="settings__more">
+            <summary>Change email</summary>
+            <form asp-action="ChangeEmail" method="post" class="settings__form">
+                <div class="field">
+                    <label class="field__label" for="newEmail">New email</label>
+                    <input class="input" id="newEmail" name="newEmail" type="email" autocomplete="email" required />
+                </div>
+                @if (Model.HasPassword)
+                {
+                    <div class="field">
+                        <label class="field__label" for="emailPassword">Current password</label>
+                        <input class="input" id="emailPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+                    </div>
+                }
+                <p class="settings__hint">We'll send a link to the new address. Nothing changes until you click it.</p>
+                <button type="submit" class="btn btn-primary btn-sm">Send link</button>
+            </form>
+        </details>
+    </section>
+
+    <section class="settings__card" aria-labelledby="password-title">
+        <h2 class="settings__title" id="password-title">Password</h2>
+        @if (!Model.HasPassword)
+        {
+            <p class="settings__hint">You sign in with Google. Set a password too if you'd like to log in without it.</p>
+        }
+        <details class="settings__more" @(Model.HasPassword ? "" : "open")>
+            <summary>@(Model.HasPassword ? "Change password" : "Set a password")</summary>
+            <form asp-action="ChangePassword" method="post" class="settings__form">
+                <input type="text" class="visually-hidden" autocomplete="username" value="@user.UserName" tabindex="-1" aria-hidden="true" readonly />
+                @if (Model.HasPassword)
+                {
+                    <div class="field">
+                        <label class="field__label" for="currentPassword">Current password</label>
+                        <input class="input" id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" required />
+                    </div>
+                }
+                <div class="field">
+                    <label class="field__label" for="newPassword">New password</label>
+                    <div class="password">
+                        <input class="input" id="newPassword" name="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="100" placeholder="At least 8 characters" />
+                        <button type="button" class="password__toggle" data-reveal aria-pressed="false">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">@(Model.HasPassword ? "Change password" : "Set password")</button>
+            </form>
+        </details>
+    </section>
+
+    @if (Model.Logins.Count > 0 || Model.AvailableProviders.Count > 0)
+    {
+        <section class="settings__card" aria-labelledby="connected-title">
+            <h2 class="settings__title" id="connected-title">Connected accounts</h2>
+            <ul class="settings__list">
+                @foreach (var login in Model.Logins)
+                {
+                    <li class="settings__row">
+                        <span class="settings__value">@(login.ProviderDisplayName ?? login.LoginProvider)</span>
+                        <span class="pill pill--ok">Connected</span>
+                        @if (Model.CanRemoveLogin)
+                        {
+                            <form asp-action="RemoveLogin" method="post" class="settings__push">
+                                <input type="hidden" name="loginProvider" value="@login.LoginProvider" />
+                                <input type="hidden" name="providerKey" value="@login.ProviderKey" />
+                                <button type="submit" class="btn btn-ghost btn-sm">Disconnect</button>
+                            </form>
+                        }
+                    </li>
+                }
+                @foreach (var provider in Model.AvailableProviders)
+                {
+                    <li class="settings__row">
+                        <span class="settings__value">@provider.DisplayName</span>
+                        <form asp-area="Identity" asp-page="/Account/ExternalLogin" asp-page-handler="Link" method="post" class="settings__push">
+                            <button type="submit" class="btn btn-ghost btn-sm" name="provider" value="@provider.Name">Connect</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+            @if (!Model.CanRemoveLogin && Model.Logins.Count > 0)
+            {
+                <p class="settings__hint">Set a password before disconnecting, so you can still get in.</p>
+            }
+        </section>
+    }
+
+    <section class="settings__card settings__card--danger" id="delete" aria-labelledby="delete-title">
+        <h2 class="settings__title" id="delete-title">Delete account</h2>
+        <p class="settings__hint">
+            This removes your account and everything in it for good: reviews, likes, follows, your queue,
+            favorites and photo. It can't be undone.
+        </p>
+        <details class="settings__more">
+            <summary>Delete my account</summary>
+            <form asp-action="Delete" method="post" class="settings__form">
+                <div class="field">
+                    <label class="field__label" for="confirmUserName">Type <strong>@user.UserName</strong> to confirm</label>
+                    <input class="input" id="confirmUserName" name="confirmUserName" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+                </div>
+                @if (Model.HasPassword)
+                {
+                    <div class="field">
+                        <label class="field__label" for="deletePassword">Password</label>
+                        <input class="input" id="deletePassword" name="currentPassword" type="password" autocomplete="current-password" required />
+                    </div>
+                }
+                <button type="submit" class="btn btn-danger btn-sm">Delete forever</button>
+            </form>
+        </details>
+    </section>
+
+    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Content("~/Identity/Account/Login")" method="post" class="settings__logout">
+        <button type="submit" class="btn btn-ghost">Log out</button>
+    </form>
+</div>
