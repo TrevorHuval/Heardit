@@ -75,6 +75,11 @@
         @RenderBody()
     </main>
 
+    <footer class="site-foot">
+        <span>Heardit</span>
+        <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    </footer>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

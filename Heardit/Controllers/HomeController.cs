@@ -155,7 +155,10 @@ namespace Heardit.Controllers
             });
         }
 
+        // /privacy is the address given to Google's OAuth consent screen; /Home/Privacy keeps old links working.
         [AllowAnonymous]
+        [HttpGet("privacy", Order = 0)]
+        [HttpGet("Home/Privacy", Order = 1)]
         public IActionResult Privacy()
         {
             return View();

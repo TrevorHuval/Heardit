@@ -2553,3 +2553,20 @@ textarea.form-control {
     .menu__chev,
     .settings__more > summary::after { transition: none; }
 }
+
+/* Footer: one quiet line, mainly so the privacy policy is a click away from every page. */
+.site-foot {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-5) var(--space-4) var(--space-6);
+    color: var(--text-4);
+    font-size: var(--fs-xs);
+}
+.site-foot a {
+    color: var(--text-3);
+    font-weight: 600;
+}
+.site-foot a:hover {
+    color: var(--text-1);
+}
