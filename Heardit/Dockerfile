@@ -18,6 +18,10 @@ WORKDIR /app
 
 # Kestrel listens on 8080 (plain HTTP); TLS is terminated by the reverse proxy in front.
 ENV ASPNETCORE_HTTP_PORTS=8080
+
+# GA4 measurement id (public, not a secret). Empty means the layout emits no analytics tag.
+ARG GA_MEASUREMENT_ID=
+ENV GoogleAnalytics__MeasurementId=$GA_MEASUREMENT_ID
 EXPOSE 8080
 
 COPY --from=build /app/publish .

@@ -1,3 +1,5 @@
+@using Heardit.Services
+@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +9,10 @@
     <title>@ViewData["Title"] - Heardit</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (Analytics.MeasurementId(Configuration[Analytics.ConfigKey]) is { } gaId)
+    {
+        <script src="~/js/analytics.js" asp-append-version="true" data-ga-id="@gaId"></script>
+    }
 </head>
 <body>
     <header class="topbar">

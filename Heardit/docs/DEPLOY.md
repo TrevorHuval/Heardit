@@ -19,6 +19,7 @@ are needed per environment. Double underscores (`__`) map to nested configuratio
 | `AllowedHosts` | no | Host header allow-list, e.g. `example.com;www.example.com`. Defaults to `*`. |
 | `ASPNETCORE_ENVIRONMENT` | no | `Production` (the container default) enables HSTS, friendly error pages, quieter logs and the key path above. |
 | `Email__Host` | for email | SMTP host, e.g. `email-smtp.us-east-1.amazonaws.com`. Unset means no email: sign-up still works, but verification and password-reset links can't be sent. In Development the links are printed to the console instead. |
+| `GoogleAnalytics__MeasurementId` | no | GA4 measurement id (`G-XXXXXXXXXX`, public). The published image has it baked in from the `GA_MEASUREMENT_ID` build arg; set this only to override it, or empty to switch analytics off. |
 | `Email__Port` | no | Defaults to `587` (STARTTLS). |
 | `Email__Username` / `Email__Password` | for email | SES **SMTP** credentials (not your AWS access keys; see below). |
 | `Email__From` | for email | Sender, e.g. `noreply@trevorhuval.com`. Must be a verified SES identity. |

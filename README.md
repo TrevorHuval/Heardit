@@ -59,7 +59,17 @@ somebody has acted on exist locally; everything else stays a Spotify call.
 
 Authorization defaults to authenticated (fallback policy in `Program.cs`), so a new action is
 login-walled unless it opts out. Unsafe requests are antiforgery-validated, actions that call
-Spotify sit behind a per-user rate limiter, and the CSP allows self plus Spotify's embed hosts.
+Spotify sit behind a per-user rate limiter, and the CSP allows self plus Spotify's embed hosts and
+Google Analytics.
+
+### analytics
+
+Google Analytics 4 is optional. Set `GoogleAnalytics__MeasurementId` (a `G-XXXXXXXXXX` id, public by
+design) and every page gets a `<script>` for `wwwroot/js/analytics.js`, which loads gtag.js and sends
+the default page view. Unset or malformed, no tag is emitted. It is skipped for Do Not Track visitors,
+runs with Google Signals and ad personalization off, and reports account pages (`/Identity/...`) by
+path only, since their links carry one-time codes. Images build it in with the `GA_MEASUREMENT_ID`
+Docker build arg, which CI sets in `.github/workflows/ci.yml`.
 
 ## running it locally
 
