@@ -67,7 +67,7 @@ namespace Heardit.Areas.Identity.Pages.Account
         /// <summary>"Continue with Google" on the log-in and sign-up pages.</summary>
         public IActionResult OnPost(string provider, string? returnUrl = null)
         {
-            var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl });
+            var redirectUrl = Url.Page("./ExternalLogin", pageHandler: "Callback", values: new { returnUrl = Url.LocalOrNull(returnUrl) });
             var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
             return new ChallengeResult(provider, properties);
         }
@@ -86,13 +86,8 @@ namespace Heardit.Areas.Identity.Pages.Account
             return new ChallengeResult(provider, properties);
         }
 
-        public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null, string? remoteError = null)
+        public async Task<IActionResult> OnGetCallbackAsync(string? returnUrl = null)
         {
-            if (remoteError != null)
-            {
-                return BackToLogin("Google sign-in was cancelled or failed. Try again.", returnUrl);
-            }
-
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
@@ -104,7 +99,7 @@ namespace Heardit.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User logged in with {Provider}.", info.LoginProvider);
-                return LocalRedirect(SafeReturnUrl(returnUrl));
+                return LocalRedirect(Url.LocalOrHome(returnUrl));
             }
 
             if (result.IsLockedOut)
@@ -125,7 +120,7 @@ namespace Heardit.Areas.Identity.Pages.Account
 
                     await _signInManager.SignInAsync(existing!, isPersistent: true, info.LoginProvider);
                     TempData["Flash"] = $"{info.ProviderDisplayName} is now connected to your account.";
-                    return LocalRedirect(SafeReturnUrl(returnUrl));
+                    return LocalRedirect(Url.LocalOrHome(returnUrl));
 
                 case ExternalSignUpOutcome.SignInFirst:
                     return BackToLogin(
@@ -219,7 +214,7 @@ namespace Heardit.Areas.Identity.Pages.Account
                 TempData["Flash"] = "Welcome to Heardit!";
             }
 
-            return LocalRedirect(SafeReturnUrl(returnUrl));
+            return LocalRedirect(Url.LocalOrHome(returnUrl));
         }
 
         public async Task<IActionResult> OnGetLinkCallbackAsync()
@@ -256,7 +251,7 @@ namespace Heardit.Areas.Identity.Pages.Account
 
         private void Show(ExternalLoginInfo info, string? returnUrl)
         {
-            ReturnUrl = returnUrl;
+            ReturnUrl = Url.LocalOrNull(returnUrl);
             ProviderDisplayName = info.ProviderDisplayName ?? info.LoginProvider;
             ProviderEmail = info.Principal.FindFirstValue(ClaimTypes.Email);
         }
@@ -305,10 +300,7 @@ namespace Heardit.Areas.Identity.Pages.Account
         private IActionResult BackToLogin(string message, string? returnUrl)
         {
             TempData["LoginError"] = message;
-            return RedirectToPage("./Login", new { returnUrl });
+            return RedirectToPage("./Login", new { returnUrl = Url.LocalOrNull(returnUrl) });
         }
-
-        private string SafeReturnUrl(string? returnUrl) =>
-            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Content("~/");
     }
 }
