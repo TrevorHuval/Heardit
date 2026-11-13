@@ -42,6 +42,20 @@ public class ReviewServiceTests
     }
 
     [Fact]
+    public async Task SecondReviewRowForSameUserAndSong_ViolatesUniqueIndex()
+    {
+        using var db = new SqliteInMemoryDb();
+        var user = TestData.MakeUser("alice");
+        using var ctx = db.CreateContext();
+        ctx.Users.Add(user);
+        ctx.Reviews.Add(new Review("first", user, 4m, "song1", "Karma Police"));
+        await ctx.SaveChangesAsync();
+
+        ctx.Reviews.Add(new Review("second", user, 5m, "song1", "Karma Police"));
+        await Assert.ThrowsAsync<DbUpdateException>(() => ctx.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task AddOrUpdateReviewAsync_ExistingReview_UpdatesInPlace()
     {
         using var db = new SqliteInMemoryDb();

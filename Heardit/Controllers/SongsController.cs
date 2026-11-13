@@ -56,6 +56,7 @@ namespace Heardit.Controllers
 
         [HttpPost]
         [RequireVerifiedEmail]
+        [EnableRateLimiting("spotify")]
         public async Task<IActionResult> SubmitReview(ReviewInputModel input)
         {
             if (!ModelState.IsValid)

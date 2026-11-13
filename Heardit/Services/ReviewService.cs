@@ -241,7 +241,28 @@ namespace Heardit.Services
 
             var review = new Review(writtenReview, user, rating, songId, songName);
             _context.Reviews.Add(review);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                // A double-submitted form raced us to the unique (user, song) row; update that one instead.
+                _context.Entry(review).State = EntityState.Detached;
+                existing = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.SongId == songId && r.UserId == userId);
+                if (existing == null)
+                {
+                    throw;
+                }
+
+                existing.WrittenReview = writtenReview;
+                existing.Rating = rating;
+                existing.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return ReviewUpsertStatus.Updated;
+            }
+
             return ReviewUpsertStatus.Added;
         }
 

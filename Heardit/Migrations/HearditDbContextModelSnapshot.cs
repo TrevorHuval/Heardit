@@ -189,7 +189,8 @@ namespace Heardit.Migrations
 
                     b.HasIndex("SongId");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId", "SongId")
+                        .IsUnique();
 
                     b.ToTable("Reviews");
                 });

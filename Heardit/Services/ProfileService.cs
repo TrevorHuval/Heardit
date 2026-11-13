@@ -299,7 +299,15 @@ namespace Heardit.Services
                 if (!alreadyFollowing)
                 {
                     _context.Follows.Add(new Follows { UserId = targetUserId, FollowerId = currentUserId });
-                    await _context.SaveChangesAsync();
+                    try
+                    {
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (DbUpdateException)
+                    {
+                        // Already following: a double-submitted form raced us to the same row.
+                        _context.ChangeTracker.Clear();
+                    }
                 }
             }
 

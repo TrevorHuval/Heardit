@@ -49,6 +49,8 @@ public class HearditDbContext : IdentityDbContext<HearditUser>
         // The song page and the batched feed stats both filter on SongId; every listing orders by CreatedAt.
         builder.Entity<Review>().HasIndex(r => r.SongId);
         builder.Entity<Review>().HasIndex(r => r.CreatedAt);
+        // One review per user per song; AddOrUpdateReviewAsync's read-then-insert can race without this.
+        builder.Entity<Review>().HasIndex(r => new { r.UserId, r.SongId }).IsUnique();
 
         // A like belongs to one review by one user; the pair is the key, so the database refuses a
         // double like on its own. It outlives neither the review nor the account that made it.

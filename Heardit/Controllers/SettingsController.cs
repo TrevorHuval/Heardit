@@ -54,6 +54,7 @@ namespace Heardit.Controllers
 
         [HttpPost]
         [RequestSizeLimit(AvatarImage.MaxUploadBytes + 64 * 1024)]
+        [EnableRateLimiting("account")]
         public async Task<IActionResult> UploadPhoto(IFormFile? photo)
         {
             var user = await _userManager.GetUserAsync(User);
