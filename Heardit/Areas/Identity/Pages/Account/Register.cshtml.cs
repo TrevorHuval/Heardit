@@ -106,8 +106,7 @@ namespace Heardit.Areas.Identity.Pages.Account
                 ? $"Welcome to Heardit! We sent a link to {user.Email}. Confirm it to start reviewing."
                 : "Welcome to Heardit! We couldn't send your confirmation email just now. You can resend it from Settings.";
 
-            var home = Url.Content("~/");
-            return LocalRedirect(!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : home);
+            return LocalRedirect(Url.LocalOrHome(returnUrl));
         }
 
         private async Task<bool> SendVerificationAsync(HearditUser user)
@@ -119,9 +118,9 @@ namespace Heardit.Areas.Identity.Pages.Account
 
         private async Task LoadAsync(string? returnUrl)
         {
-            ReturnUrl = returnUrl;
+            ReturnUrl = Url.LocalOrNull(returnUrl);
             Providers = new ExternalLoginsViewModel(
-                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), returnUrl);
+                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), ReturnUrl);
         }
 
         /// <summary>Put Identity's errors next to the field they're about.</summary>

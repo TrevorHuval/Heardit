@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Heardit.Areas.Identity.Data;
+using Heardit.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -53,7 +54,7 @@ namespace Heardit.Areas.Identity.Pages.Account
         {
             if (User.Identity?.IsAuthenticated == true)
             {
-                return LocalRedirect(SafeReturnUrl(returnUrl));
+                return LocalRedirect(Url.LocalOrHome(returnUrl));
             }
 
             if (!string.IsNullOrEmpty(ErrorMessage))
@@ -87,7 +88,7 @@ namespace Heardit.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("User logged in.");
-                return LocalRedirect(SafeReturnUrl(returnUrl));
+                return LocalRedirect(Url.LocalOrHome(returnUrl));
             }
 
             if (result.IsLockedOut)
@@ -123,12 +124,9 @@ namespace Heardit.Areas.Identity.Pages.Account
 
         private async Task LoadAsync(string? returnUrl)
         {
-            ReturnUrl = returnUrl;
+            ReturnUrl = Url.LocalOrNull(returnUrl);
             Providers = new ExternalLoginsViewModel(
-                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), returnUrl);
+                (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList(), ReturnUrl);
         }
-
-        private string SafeReturnUrl(string? returnUrl) =>
-            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Content("~/");
     }
 }

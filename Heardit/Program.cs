@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Heardit.Controllers;
 using Heardit.Models;
@@ -86,6 +87,17 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
         options.CorrelationCookie.Path = pathBase ?? "/";
         // Google says whether it has verified the address; only a verified one may link to an account.
         options.ClaimActions.MapJsonKey(ExternalAccounts.EmailVerifiedClaim, "verified_email");
+        // Cancelling at Google (or any other failure on the way back) lands on the log-in page with a message;
+        // left alone the handler would throw.
+        options.Events.OnRemoteFailure = context =>
+        {
+            var tempData = context.HttpContext.RequestServices.GetRequiredService<ITempDataDictionaryFactory>().GetTempData(context.HttpContext);
+            tempData["LoginError"] = "Google sign-in was cancelled or failed. Try again.";
+            tempData.Save();
+            context.Response.Redirect(context.Request.PathBase + "/Identity/Account/Login");
+            context.HandleResponse();
+            return Task.CompletedTask;
+        };
     });
 }
 
