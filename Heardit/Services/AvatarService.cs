@@ -48,7 +48,8 @@ namespace Heardit.Services
 
             using var buffer = new MemoryStream();
             await upload.CopyToAsync(buffer);
-            var webp = AvatarImage.Process(buffer.ToArray());
+            var bytes = buffer.ToArray();
+            var webp = await AvatarImage.Gate.RunAsync(() => AvatarImage.Process(bytes));
             if (webp == null)
             {
                 return new AvatarUploadResult(AvatarUploadStatus.Unsupported);
@@ -109,6 +110,13 @@ namespace Heardit.Services
         public const long MaxUploadBytes = 5 * 1024 * 1024;
         public const int Size = 256;
 
+        /// <summary>
+        /// One photo is decoded at a time. A small file can unpack to a 40-megapixel bitmap (about 160 MB
+        /// of native memory), so a handful of uploads decoded side by side could exhaust the host that
+        /// this app shares with others. Later uploads wait their turn instead.
+        /// </summary>
+        public static readonly DecodeGate Gate = new(1);
+
         // Refuse to decode anything bigger than ~40 megapixels: a tiny file can claim a huge canvas.
         private const long MaxSourcePixels = 40_000_000;
 
@@ -144,7 +152,10 @@ namespace Heardit.Services
                 return null;
             }
 
-            using var upright = ApplyOrientation(decoded, codec.EncodedOrigin);
+            // Already upright: use the decoded bitmap as it is rather than holding a second full-size copy.
+            var needsTurning = codec.EncodedOrigin != SKEncodedOrigin.TopLeft && codec.EncodedOrigin != SKEncodedOrigin.Default;
+            using var turned = needsTurning ? ApplyOrientation(decoded, codec.EncodedOrigin) : null;
+            var upright = turned ?? decoded;
 
             // Centre crop to a square, then scale down with a good filter.
             var side = Math.Min(upright.Width, upright.Height);
@@ -201,6 +212,27 @@ namespace Heardit.Services
             using var sourceImage = SKImage.FromBitmap(source);
             canvas.DrawImage(sourceImage, 0, 0, SKSamplingOptions.Default);
             return result;
+        }
+    }
+
+    /// <summary>Lets a fixed number of memory-hungry jobs run at once, off the request thread; the rest queue.</summary>
+    public sealed class DecodeGate
+    {
+        private readonly SemaphoreSlim _slots;
+
+        public DecodeGate(int concurrency) => _slots = new SemaphoreSlim(concurrency, concurrency);
+
+        public async Task<T> RunAsync<T>(Func<T> work, CancellationToken cancellationToken = default)
+        {
+            await _slots.WaitAsync(cancellationToken);
+            try
+            {
+                return await Task.Run(work, cancellationToken);
+            }
+            finally
+            {
+                _slots.Release();
+            }
         }
     }
 }

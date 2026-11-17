@@ -2,7 +2,9 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      # Loopback only: the app trusts X-Forwarded-For/Proto from whoever connects (see docs/DEPLOY.md),
+      # so it must be reached through the reverse proxy on this host, never straight from the network.
+      - "127.0.0.1:8080:8080"
     environment:
       # The app reads configuration from environment variables (double-underscore = nested key).
       ConnectionStrings__HearditDbContextConnection: "Host=db;Port=5432;Database=heardit;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"

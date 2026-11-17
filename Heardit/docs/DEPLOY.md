@@ -53,7 +53,9 @@ On a small host, run a reverse proxy such as Caddy or nginx in front of the cont
 terminate HTTPS and forward plain HTTP to port `8080`. The app honors `X-Forwarded-For` and
 `X-Forwarded-Proto`, so HTTPS redirection, HSTS, and secure cookies work correctly. This trust
 is unconditional (known-proxy/network checks are cleared), which assumes the app is reachable
-**only** through the proxy — do not expose port `8080` directly to the internet.
+**only** through the proxy — do not expose port `8080` directly to the internet. The bundled
+`docker-compose.yml` publishes it on `127.0.0.1` only for that reason. Set `AllowedHosts` to the
+site's hostnames too: the links in account emails are built from the request's `Host`.
 
 ## Production: trevorhuval.com
 

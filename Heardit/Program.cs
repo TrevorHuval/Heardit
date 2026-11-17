@@ -241,26 +241,10 @@ if (!app.Environment.IsDevelopment())
 // Render the friendly error view for unhandled error status codes (e.g. 404/403 from controllers).
 app.UseStatusCodePagesWithReExecute("/Home/Error");
 
-// Baseline security headers. CSP permits the Spotify embeds the views use and Google Analytics (the gtag.js
-// script plus its collection endpoints; the init code is the same-origin wwwroot/js/analytics.js). The icon
-// that once required the remote Font Awesome kit is now an inline SVG, so no external font hosts.
-// form-action also allows Google: "Continue with Google" posts to this app, which redirects the form
-// on to accounts.google.com, and browsers apply form-action to that redirect too.
+// Baseline security headers, including the CSP (see SecurityHeaders for what it permits and why).
 app.Use(async (context, next) =>
 {
-    var headers = context.Response.Headers;
-    headers["X-Content-Type-Options"] = "nosniff";
-    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    headers["X-Frame-Options"] = "SAMEORIGIN";
-    headers["Content-Security-Policy"] =
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' https://open.spotify.com https://*.spotifycdn.com https://www.googletagmanager.com; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "font-src 'self' data:; " +
-        "img-src 'self' data: https:; " +
-        "connect-src 'self' https://*.spotify.com https://*.spotifycdn.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; " +
-        "frame-src https://open.spotify.com https://*.spotify.com https://*.spotifycdn.com; " +
-        "object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com; frame-ancestors 'self'";
+    SecurityHeaders.Apply(context.Response.Headers);
     await next();
 });
 
