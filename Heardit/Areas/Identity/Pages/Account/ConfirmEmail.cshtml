@@ -1,12 +1,37 @@
 @page
 @model ConfirmEmailModel
 @{
-    ViewData["Title"] = Model.Succeeded ? "Email confirmed" : "Confirmation link";
+    ViewData["Title"] = Model.Succeeded ? "Email confirmed" : Model.Pending ? "Confirm your email" : "Confirmation link";
 }
 
 <div class="auth">
     <div class="auth__card">
-        @if (Model.Succeeded)
+        @if (Model.Pending)
+        {
+            <div class="auth__head">
+                <h1 class="auth__title">@(Model.WasChange ? "Confirm your new email" : "Confirm your email")</h1>
+                <p class="auth__sub">
+                    @if (Model.WasChange)
+                    {
+                        <text>Make <strong>@Model.Email</strong> the email on your Heardit account?</text>
+                    }
+                    else
+                    {
+                        <text>One click and you can start rating tracks, liking reviews and following other listeners.</text>
+                    }
+                </p>
+            </div>
+            <form method="post" class="form-actions is-center">
+                <input type="hidden" name="userId" value="@Model.UserId" />
+                <input type="hidden" name="code" value="@Model.Code" />
+                @if (Model.WasChange)
+                {
+                    <input type="hidden" name="email" value="@Model.Email" />
+                }
+                <button type="submit" class="btn btn-primary btn-lg">@(Model.WasChange ? "Confirm new email" : "Confirm email")</button>
+            </form>
+        }
+        else if (Model.Succeeded)
         {
             <div class="auth__head">
                 <span class="auth__badge" aria-hidden="true">

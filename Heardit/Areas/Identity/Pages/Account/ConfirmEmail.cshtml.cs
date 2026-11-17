@@ -9,7 +9,7 @@ namespace Heardit.Areas.Identity.Pages.Account
     /// <summary>
     /// Lands the links from both confirmation emails: the one sent at sign-up (userId + code) and the one
     /// sent when changing address (userId + email + code). Open to anyone, since the link may be opened
-    /// on a phone that isn't signed in.
+    /// on a phone that isn't signed in. The link shows a confirm button; only the button's POST acts.
     /// </summary>
     [AllowAnonymous]
     public class ConfirmEmailModel : PageModel
@@ -23,13 +23,40 @@ namespace Heardit.Areas.Identity.Pages.Account
             _signInManager = signInManager;
         }
 
+        /// <summary>True on the first visit with a well-formed link: the page asks for one click to confirm.</summary>
+        public bool Pending { get; private set; }
+
         public bool Succeeded { get; private set; }
 
         public bool WasChange { get; private set; }
 
         public string? Email { get; private set; }
 
-        public async Task<IActionResult> OnGetAsync(string? userId, string? code, string? email = null)
+        public string? UserId { get; private set; }
+
+        public string? Code { get; private set; }
+
+        /// <summary>
+        /// Opening the link changes nothing; it shows a button that posts back. Mail scanners and link
+        /// previews fetch every URL in a message, and a link that confirmed on GET would let them verify
+        /// an address on behalf of whoever typed it in at sign-up, without its owner ever agreeing.
+        /// </summary>
+        public IActionResult OnGet(string? userId, string? code, string? email = null)
+        {
+            WasChange = !string.IsNullOrWhiteSpace(email);
+            if (string.IsNullOrWhiteSpace(userId) || AccountTokens.Decode(code) == null)
+            {
+                return Page();
+            }
+
+            Pending = true;
+            UserId = userId;
+            Code = code;
+            Email = WasChange ? email : null;
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostAsync(string? userId, string? code, string? email = null)
         {
             WasChange = !string.IsNullOrWhiteSpace(email);
             var token = AccountTokens.Decode(code);

@@ -48,7 +48,7 @@ namespace Heardit.Areas.Identity.Pages.Account
             public string UserName { get; set; } = string.Empty;
 
             [Required(ErrorMessage = "Enter your email.")]
-            [EmailAddress(ErrorMessage = "That doesn't look like an email address.")]
+            [PlainEmailAddress]
             [StringLength(254)]
             [Display(Name = "Email")]
             public string Email { get; set; } = string.Empty;

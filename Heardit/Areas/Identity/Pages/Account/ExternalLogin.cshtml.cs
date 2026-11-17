@@ -57,7 +57,7 @@ namespace Heardit.Areas.Identity.Pages.Account
             public string UserName { get; set; } = string.Empty;
 
             /// <summary>Only asked for when the provider didn't share an email.</summary>
-            [EmailAddress(ErrorMessage = "That doesn't look like an email address.")]
+            [PlainEmailAddress]
             [Display(Name = "Email")]
             public string? Email { get; set; }
         }

@@ -27,6 +27,14 @@ namespace Heardit.Services.Email
 
         public async Task<bool> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
+            // Exactly one recipient. MailAddressCollection.Add(string) would split on commas, so the address
+            // is parsed on its own, and anything that isn't a single address is refused rather than thrown.
+            if (!MailAddress.TryCreate(message.To, out var recipient))
+            {
+                _logger.LogWarning("Refused to send the \"{Subject}\" email: the recipient is not a single address.", message.Subject);
+                return false;
+            }
+
             using var mail = new MailMessage
             {
                 From = new MailAddress(_options.From!, _options.FromName),
@@ -34,7 +42,7 @@ namespace Heardit.Services.Email
                 Body = message.Text,
                 IsBodyHtml = false
             };
-            mail.To.Add(message.To);
+            mail.To.Add(recipient);
             // Text first, HTML second: clients show the last alternative they understand.
             mail.AlternateViews.Add(AlternateView.CreateAlternateViewFromString(message.Html, null, MediaTypeNames.Text.Html));
 

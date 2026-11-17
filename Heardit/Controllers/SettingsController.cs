@@ -131,7 +131,7 @@ namespace Heardit.Controllers
             }
 
             newEmail = newEmail?.Trim();
-            if (string.IsNullOrEmpty(newEmail) || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(newEmail))
+            if (newEmail == null || !PlainEmailAddressAttribute.IsPlainAddress(newEmail))
             {
                 return Back("Enter a valid email address.", error: true);
             }
