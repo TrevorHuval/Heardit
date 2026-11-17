@@ -116,11 +116,12 @@ Serves http://localhost:5046. Migrations apply on startup, so the database creat
 
 ## deploy
 
-Live at [trevorhuval.com/heardit](https://trevorhuval.com/heardit). CI publishes
+Live at [heardit.trevorhuval.com](https://heardit.trevorhuval.com). CI publishes
 `ghcr.io/trevorhuval/heardit` on every push to `master`; the
 [trevorhuval-infra](https://github.com/TrevorHuval/trevorhuval-infra) stack pulls it and serves
-it under `/heardit` behind Caddy. See [Heardit/docs/DEPLOY.md](Heardit/docs/DEPLOY.md) for
-configuration, the sub-path setup, and running behind a TLS-terminating reverse proxy.
+it from `/` on its own subdomain behind Caddy, with no `PathBase` (the old `trevorhuval.com/heardit`
+address redirects there). See [Heardit/docs/DEPLOY.md](Heardit/docs/DEPLOY.md) for configuration,
+the optional sub-path setup, and running behind a TLS-terminating reverse proxy.
 
 ## known limitations
 
