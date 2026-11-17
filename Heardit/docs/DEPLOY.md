@@ -57,29 +57,30 @@ is unconditional (known-proxy/network checks are cleared), which assumes the app
 `docker-compose.yml` publishes it on `127.0.0.1` only for that reason. Set `AllowedHosts` to the
 site's hostnames too: the links in account emails are built from the request's `Host`.
 
-## Production: trevorhuval.com
+## Production: heardit.trevorhuval.com
 
 The live deployment is one service in the
 [trevorhuval-infra](https://github.com/TrevorHuval/trevorhuval-infra) compose stack, next to
-Plannit and MusiQL, served at `https://trevorhuval.com/heardit`.
+Plannit and MusiQL, served at `https://heardit.trevorhuval.com`.
 
 - **Image.** Every push to `master` runs the tests and publishes
   `ghcr.io/trevorhuval/heardit:latest` (and a `sha-…` tag) from `.github/workflows/ci.yml`.
   The Docker build context is the `Heardit/` folder.
-- **Routing.** Caddy matches `/heardit` and `/heardit/*` and proxies to `heardit:8080` with the
-  path intact; the app runs with `PathBase=/heardit`. Its cookies are named `Heardit.Auth` and
-  `Heardit.Antiforgery` and scoped to that path, so they never collide with Plannit's on the
-  same domain.
+- **Routing.** Caddy serves the `heardit.` subdomain and proxies it to `heardit:8080`. The app
+  runs from `/` with no `PathBase`, so its cookies (`Heardit.Auth`, `Heardit.Antiforgery`) are
+  scoped to `Path=/` on that host. The old `trevorhuval.com/heardit` addresses redirect there
+  with a 307 that keeps the rest of the path and the query.
 - **State.** `heardit-db` (Postgres 17) holds the data in the `heardit-pgdata` volume, and the
   data-protection keys live in `heardit-data`, so redeploys keep everyone logged in.
   `scripts/backup.sh` in the infra repo dumps the database alongside the others.
 - **Secrets** come from the infra `.env`: `HEARDIT_POSTGRES_PASSWORD`,
   `HEARDIT_SPOTIFY_CLIENT_ID`, `HEARDIT_SPOTIFY_CLIENT_SECRET`.
 
-To ship a change: push to `master`, wait for CI, then run `./scripts/deploy.sh` on the server
-(or `./scripts/sync-to-server.sh` from a workstation).
+To ship a change: push to `master`, wait for CI, then run `./scripts/deploy.sh` on the server.
+Without SSH, run it through AWS Systems Manager as described in the infra repo's
+`DEPLOYMENT.md`.
 
-To try the sub-path setup locally, `dotnet run --launch-profile http-pathbase` serves the app
+`PathBase` is still supported for hosting under a sub-path. To try it locally, `dotnet run --launch-profile http-pathbase` serves the app
 at `http://localhost:5047/heardit/`.
 
 ## Account email with Amazon SES
@@ -105,7 +106,7 @@ at `http://localhost:5047/heardit/`.
    scopes `openid`, `email`, `profile` (all non-sensitive, so no Google review is needed). Publish it.
 3. **Credentials → Create credentials → OAuth client ID → Web application.**
    Authorised redirect URIs:
-   - `https://trevorhuval.com/heardit/signin-google` (production)
+   - `https://heardit.trevorhuval.com/signin-google` (production)
    - `http://localhost:5046/signin-google` (optional, for local testing)
 4. Put the client ID and secret in `Authentication__Google__ClientId` / `__ClientSecret`.
 
